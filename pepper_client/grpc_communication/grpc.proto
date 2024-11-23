@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+service MediaService {
+    // RPC method to send audio data
+    rpc SendAudio(AudioRequest) returns (AudioResponse);
+    
+    // RPC method to send image data
+    rpc SendImage(ImageRequest) returns (ImageResponse);
+}
+
+// Message for sending audio data
+message AudioRequest {
+    bytes audio_data = 1;          // Raw audio bytes
+    int32 sample_rate = 2;         // Sampling rate (e.g., 16000 Hz)
+    int32 num_channels = 3;        // Number of channels (e.g., 1 for mono, 2 for stereo)
+    string encoding = 4;           // Encoding format (e.g., "PCM_16", "MP3")
+    string description = 5;        // Optional description or label for the audio
+}
+
+// Message for audio response
+message AudioResponse {
+    string status = 1;             // Status of the operation (e.g., "success", "error")
+    string message = 2;            // Additional response message or details
+}
+
+// Message for sending image data
+message ImageRequest {
+    bytes image_data = 1;          // Raw image bytes
+    string format = 2;             // Image format (e.g., "JPEG", "PNG")
+    int32 width = 3;               // Image width in pixels
+    int32 height = 4;              // Image height in pixels
+    string description = 5;        // Optional description or label for the image
+}
+
+// Message for image response
+message ImageResponse {
+    string status = 1;             // Status of the operation (e.g., "success", "error")
+    string message = 2;            // Additional response message or details
+}
+
