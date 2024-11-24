@@ -8,6 +8,7 @@ class SpeechManager:
     def __init__(self, session):
         self.speech_service  = session.service("ALTextToSpeech")
         self.speech_service.setLanguage("English")
+        print("Subscribed to speech service...")
 
     def say(self, text, **kwargs):
         """ Makes Pepper say whatever text is

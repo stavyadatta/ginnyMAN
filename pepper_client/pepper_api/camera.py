@@ -24,6 +24,7 @@ class CameraManager():
         # position 3: newValue = 1 # Default image is upsidedown, so setting this param to 1 will flip it back
         self.camera_service.setParameter(0, 8, 1) # Vertical flip
         #self.camera_service.setParameter(0, 7, 1) # Horizontal flip
+        print("Subscribed to Camera Service")
 
     def __del__(self):
         # Unsubbing

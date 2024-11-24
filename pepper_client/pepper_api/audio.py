@@ -1,4 +1,5 @@
 import os
+import io
 import argparse
 import qi
 import numpy as np
@@ -6,12 +7,12 @@ import time
 import sys
 import soundfile as sf
 
-class AudioManager(object):
+class AudioManager2(object):
     def __init__(self,session):
-        super(AudioManager,self).__init__()      
+        super(AudioManager2,self).__init__()      
         self.module_name = "AudioManager2"
         # Get the services
-        self.audio_service =session.service("ALAudioDevice")
+        self.audio_service = session.service("ALAudioDevice")
         # Enable energy input compution 
         self.audio_service.enableEnergyComputation()
         # Audio recording setting
@@ -33,6 +34,9 @@ class AudioManager(object):
         self.nbOfFramesToProcess =30
         self.isRecording = False
         self.sound_list = [3000]
+        self.audio_data_buffer = io.BytesIO()
+
+        print("Subscribed to audio service...")
 
 
     def processRemote(self, nbOfChannels, nbOfSamplesByChannel, timeStamp, inputBuffer):
@@ -56,7 +60,8 @@ class AudioManager(object):
             else:
                 print("reset count")
                 self.framesCount = 1
-            self.rawoutput.write(inputBuffer)
+            # self.rawoutput.write(inputBuffer)
+            self.audio_data_buffer.write(inputBuffer)
             self.last_sound_time = time.time()
         else:
             if front_energy > self.threshold:
@@ -76,9 +81,11 @@ class AudioManager(object):
         """
         # try
         self.isProcessingDone = False
-        self.rawoutput = open(self.rawfile, "wb+")
-        self.audio_service.setClientPreferences(self.module_name, self.sample_rate, self.channels, 0)
-        self.audio_service.subscribe(self.module_name)
+        # self.rawoutput = open(self.rawfile, "wb+")
+        self.audio_data_buffer = io.BytesIO()
+        self.audio_service.setClientPreferences("ALAudioDevice", 
+                                                self.sample_rate, self.channels, 0)
+        self.audio_service.subscribe("ALAudioDevice")
         while self.isProcessingDone == False:
             #print("Pausing")
             time.sleep(1)
@@ -89,15 +96,19 @@ class AudioManager(object):
         #     print("Closing")
         #     self.audio_service.unsubscribe(self.module_name)
         # Read the data from the raw file and save it as a wav file
-        data, samplerate = sf.read(self.rawfile, channels=1, samplerate=16000, subtype='PCM_16')
-        sf.write(self.wavfile, data, samplerate)
-        print "The recording is saved here: " + self.wavfile
-        self.recording_count+=1
-        self.wavfile = self.tmppath + "recording" + str(self.recording_count) + ".wav"
-        self.rawfile = self.tmppath + "rawrecording" + str(self.recording_count) + ".raw"
-
-        #return self.wavfile
+        self.audio_data_buffer.seek(0)
+        data, samplerate = sf.read(self.audio_data_buffer, channels=1, 
+                                   samplerate=self.sample_rate, subtype='PCM_16')
         return data, samplerate
+        # sf.write(self.wavfile, data, samplerate)
+        # # print "The recording is saved here: " + self.wavfile
+        # print("The recording is saved here: ")
+        # self.recording_count+=1
+        # self.wavfile = self.tmppath + "recording" + str(self.recording_count) + ".wav"
+        # self.rawfile = self.tmppath + "rawrecording" + str(self.recording_count) + ".raw"
+        #
+        # #return self.wavfile
+        # return data, samplerate
     
     def getSound(self):
         return self.audio_service.getFrontMicEnergy()
@@ -127,7 +138,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     app.start() 
-    MyAudioManager = AudioManager(app.session)
+    MyAudioManager = AudioManager2(app.session)
     print("audioManager.module_name:" + MyAudioManager.module_name)
     #MyAudioManager.audio_service.unsubscribe(MyAudioManager.module_name)
     app.session.registerService(MyAudioManager.module_name, MyAudioManager)

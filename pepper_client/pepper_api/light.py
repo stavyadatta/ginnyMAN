@@ -16,6 +16,7 @@ class EyeLEDManager:
             "FaceLedLeft0", "FaceLedLeft1", "FaceLedLeft2", "FaceLedLeft3",
             "FaceLedLeft4", "FaceLedLeft5", "FaceLedLeft6", "FaceLedLeft7"
         ]
+        print("Subscribed to eye LED service...")
 
     def set_eye_color(self, color):
         """

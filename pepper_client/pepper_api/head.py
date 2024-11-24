@@ -12,6 +12,7 @@ class HeadManager:
         # First, wake up.
         self.motion_service.wakeUp()
         self.reset_posture()
+        print("Subscribed to head service...")
 
     def reset_posture(self, speed=0.5):
         """ Makes the robot stand up straight. Used to reset posture.
