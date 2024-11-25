@@ -12,9 +12,8 @@ class AudioManager2(object):
         super(AudioManager2,self).__init__()      
         self.module_name = "AudioManager2"
         # Get the services
-        self.audio_service = session.service("ALAudioDevice")
+        # self.audio_service = session.service("ALAudioDevice")
         # Enable energy input compution 
-        self.audio_service.enableEnergyComputation()
         # Audio recording setting
 
         self.threshold = 1000
@@ -38,6 +37,14 @@ class AudioManager2(object):
 
         print("Subscribed to audio service...")
 
+
+    def init_service(self, session):
+        services = session.services()
+        for service in services:
+            print(service)
+        print("\n")
+        self.audio_service = session.service("ALAudioDevice")
+        self.audio_service.enableEnergyComputation()
 
     def processRemote(self, nbOfChannels, nbOfSamplesByChannel, timeStamp, inputBuffer):
         """
@@ -75,41 +82,30 @@ class AudioManager2(object):
             self.framesCount = 0
             print("Recordng finished")
 
+
     def startProcessing(self):
         """
         Subscribe the service and return the audio data
         """
-        # try
         self.isProcessingDone = False
-        # self.rawoutput = open(self.rawfile, "wb+")
         self.audio_data_buffer = io.BytesIO()
-        self.audio_service.setClientPreferences("ALAudioDevice", 
+
+        self.audio_service.setClientPreferences("AudioManager2", 
                                                 self.sample_rate, self.channels, 0)
-        self.audio_service.subscribe("ALAudioDevice")
-        while self.isProcessingDone == False:
-            #print("Pausing")
-            time.sleep(1)
-        self.audio_service.unsubscribe(self.module_name)
-    # except Exception as e:
-        #     print("Error while subscribing", e)
-        # finally:
-        #     print("Closing")
-        #     self.audio_service.unsubscribe(self.module_name)
-        # Read the data from the raw file and save it as a wav file
+        self.audio_service.subscribe("AudioManager2")
+        while not self.isProcessingDone:
+            time.sleep(0.1)
+        self.audio_service.unsubscribe("AudioManager2")
+
+        # Read the data from the buffer and save it as a numpy array
         self.audio_data_buffer.seek(0)
-        data, samplerate = sf.read(self.audio_data_buffer, channels=1, 
-                                   samplerate=self.sample_rate, subtype='PCM_16')
-        return data, samplerate
-        # sf.write(self.wavfile, data, samplerate)
-        # # print "The recording is saved here: " + self.wavfile
-        # print("The recording is saved here: ")
-        # self.recording_count+=1
-        # self.wavfile = self.tmppath + "recording" + str(self.recording_count) + ".wav"
-        # self.rawfile = self.tmppath + "rawrecording" + str(self.recording_count) + ".raw"
-        #
-        # #return self.wavfile
-        # return data, samplerate
-    
+        data = self.audio_data_buffer.read()
+        # with sf.SoundFile(self.audio_data_buffer, mode='r', samplerate=self.sample_rate,
+        #                 channels=1, subtype='PCM_16', format='RAW') as f:
+        #     data = f.read()
+        #     samplerate = f.samplerate
+        return data, self.sample_rate
+
     def getSound(self):
         return self.audio_service.getFrontMicEnergy()
 

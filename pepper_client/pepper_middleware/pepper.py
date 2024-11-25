@@ -90,8 +90,8 @@ class Pepper():
             audio_data, sample_rate = self.get_audio()
 
             # Convert audio data to bytes if needed
-            if isinstance(audio_data, list):
-                audio_data = bytes(audio_data)
+            # if isinstance(audio_data, list):
+            #     audio_data = bytes(audio_data)
 
             request = AudioRequest(
                 audio_data=audio_data,
@@ -105,7 +105,7 @@ class Pepper():
             try:
                 response = stub.SendAudio(request)
                 # print(f"Response from server: {response.status} - {response.message}")
-                print("soine")
+                #print("soine")
             except grpc.RpcError as e:
                 print("yeup")
                 # print(f"gRPC error: {e.code()} - {e.details()}")
