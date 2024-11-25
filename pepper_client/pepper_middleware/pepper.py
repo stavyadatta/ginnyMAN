@@ -29,6 +29,7 @@ class Pepper():
 
         self.eye_led_manager = EyeLEDManager(self.session)
         self.session.registerService("AudioManager2", self.audio_manager)
+        self.audio_manager.init_service(self.session)
 
 
         self.head_manager = HeadManager(self.session)

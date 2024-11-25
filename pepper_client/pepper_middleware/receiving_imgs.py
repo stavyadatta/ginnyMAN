@@ -5,7 +5,7 @@ from concurrent import futures
 from PIL import Image
 from io import BytesIO
 from grpc_communication.grpc_pb2 import ImageResponse
-from grpc_communication.grpc_pb2_grpc import MediaServiceStub,  \
+from grpc_communication.grpc_pb2_grpc import MediaServiceStub, \
     add_MediaServiceServicer_to_server, MediaServiceServicer
 
 class MediaServer(MediaServiceServicer):
@@ -26,31 +26,20 @@ class MediaServer(MediaServiceServicer):
 
             image_path = os.path.join(
                 self.save_directory,
-                f"image_{int(time.time())}.{image_format.lower()}"
+                "image_{}.{}".format(int(time.time()), image_format.lower())
             )
             
             # Save the image to the specified directory
             image.save(image_path, format=image_format)
-            print(f"Image successfully saved at {image_path}")
+            print("Image successfully saved at {}".format(image_path))
 
             # Respond to the client
-            return ImageResponse(status="success", message=f"Image saved at {image_path}")
+            return ImageResponse(status="success", message="Image saved at {}".format(image_path))
 
         except Exception as e:
-            print(f"Error while saving the image: {str(e)}")
-            return ImageResponse(status="failure", message=f"Error: {str(e)}")
-    # def SendImage(self, request, context):
-    #     # Save the image to the specified directory
-    #     image_path = os.path.join(self.save_directory, f"image_{int(time.time())}.jpeg")
-    #
-    #     with open(image_path, "wb") as f:
-    #         f.write(request.image_data)
-    #
-    #     print(f"Image saved to {image_path}")
-    #
-    #     # Respond to the client
-    #     return ImageResponse(status="success", message=f"Image saved at {image_path}")
-    #
+            print("Error while saving the image: {}".format(str(e)))
+            return ImageResponse(status="failure", message="Error: {}".format(str(e)))
+
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     add_MediaServiceServicer_to_server(MediaServer(), server)
