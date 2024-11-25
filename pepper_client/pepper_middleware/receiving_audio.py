@@ -2,7 +2,6 @@ import os
 import grpc
 import time
 from concurrent import futures
-from grpc_communication.grpc_pb2 import AudioResponse
 from grpc_communication.grpc_pb2_grpc import MediaServiceServicer, add_MediaServiceServicer_to_server
 
 class MediaServer(MediaServiceServicer):
