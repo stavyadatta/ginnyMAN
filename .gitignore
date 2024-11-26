@@ -1,0 +1,78 @@
+# Ignore Python cache files in all directories
+**/__pycache__/
+
+# Ignore Python bytecode files
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore editor and IDE specific files
+*.swp
+*.swo
+*.~*  # Backup files
+.vscode/
+.idea/
+*.iml
+
+# Ignore OS generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# Ignore logs and debug files
+*.log
+*.out
+*.err
+
+# Ignore temporary files
+*.tmp
+*.temp
+*.bak
+*.old
+
+# Ignore virtual environments
+env/
+venv/
+ENV/
+VENV/
+
+# Ignore media files
+*.wav
+*.mp3
+*.flac
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+*.webp
+
+# Ignore compiled or binary files
+*.o
+*.so
+*.dll
+*.exe
+*.class
+*.jar
+
+# Ignore archives and compressed files
+*.zip
+*.tar
+*.gz
+*.rar
+*.7z
+
+# Ignore other tools or project-specific files
+*.coverage
+*.pytest_cache/
+.coverage.*
+*.tox/
+.cache/
+node_modules/
+*.lock
+
