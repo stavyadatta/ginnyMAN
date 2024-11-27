@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+import "google/protobuf/empty.proto";
+
 service MediaService {
     // RPC method to send audio data
     rpc SendAudio(AudioRequest) returns (AudioResponse);
@@ -8,7 +10,7 @@ service MediaService {
     rpc SendImage(ImageRequest) returns (ImageResponse);
 
     // New RPC method to send audio data and stream text response
-    rpc LLmResponse(SessionRequest) returns (stream TextChunk);
+    rpc LLmResponse(google.protobuf.Empty) returns (stream TextChunk);
 }
 
 // Message for sending audio data
@@ -18,7 +20,6 @@ message AudioRequest {
     int32 num_channels = 3;        // Number of channels (e.g., 1 for mono, 2 for stereo)
     string encoding = 4;           // Encoding format (e.g., "PCM_16", "MP3")
     string description = 5;        // Optional description or label for the audio
-    string session_id = 6;          // Unique session id identifier
 }
 
 // New message for streamed text chunks
@@ -40,7 +41,6 @@ message ImageRequest {
     int32 width = 3;               // Image width in pixels
     int32 height = 4;              // Image height in pixels
     string description = 5;        // Optional description or label for the image
-    string session_id = 6;          // Unique session id identifier
 }
 
 // Message for image response
@@ -49,6 +49,3 @@ message ImageResponse {
     string message = 2;            // Additional response message or details
 }
 
-message SessionRequest {
-    string session_id = 1;       // Unique identifier for the session
-}
