@@ -23,14 +23,14 @@ def process_audio(audio_queue, whisper_model, llama_handler: Llama):
             break
         try:
             # Transcribe the audio
-            transcription = whisper_model.speech2text(
-                audio_item,
-            )
+            transcription = whisper_model.speech2text(audio_item)
             print(f"Transcription: {transcription}")
 
-            # Send transcription to llama.cpp
-            llama_response = llama_handler.send_to_llama(transcription)
-            print(f"Llama response: {llama_response}")
+            # Send transcription to llama.cpp and stream the response
+            print("Llama response:")
+            for response_chunk in llama_handler.send_to_llama(transcription):
+                print(response_chunk, end='', flush=True)
+            print()  # Newline after streaming is complete
         except Exception as e:
             print(f"Error processing audio: {e}")
             traceback.print_exc()

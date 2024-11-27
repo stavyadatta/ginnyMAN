@@ -17,9 +17,9 @@ class Llama:
 
     def send_to_llama(self, text):
         """
-        Send transcribed text to the llama.cpp server and return its response.
+        Send transcribed text to the llama.cpp server and stream its response.
         :param text: Transcribed text to send.
-        :return: Response from the llama.cpp server.
+        :return: Generator yielding streamed responses from the llama.cpp server.
         """
         try:
             response = self.client.chat.completions.create(
@@ -31,8 +31,41 @@ class Llama:
                 temperature=0.7,  # Adjusts randomness: 0.0 (deterministic) to 1.0 (more random)
                 max_tokens=500,   # Maximum number of tokens to generate
                 top_p=0.9,         # Nucleus sampling: considers tokens that comprise the top P probability mass
+                stream=True        # Enable streaming responses
             )
-            return response.choices[0].message.content.strip()
+            print("The response data structure is ", response)
+            for chunk in response:
+                if chunk.choices[0].delta.content is not None:
+                     yield chunk.choices[0].delta.content
+
+                # if 'choices' in chunk:
+                #     delta = chunk['choices'][0].get('delta', {}).get('content', '')
+                #     print("The delta is this ", delta)
+                #     if delta:
+                #         print("The delta is this ", delta)
+                #         yield delta.strip()
         except Exception as e:
             print(f"Error sending to llama.cpp server: {e}")
-            return "Error communicating with llama.cpp server"
+            yield "Error communicating with llama.cpp server"
+
+    # def send_to_llama(self, text):
+    #     """
+    #     Send transcribed text to the llama.cpp server and return its response.
+    #     :param text: Transcribed text to send.
+    #     :return: Response from the llama.cpp server.
+    #     """
+    #     try:
+    #         response = self.client.chat.completions.create(
+    #             model="gpt-3.5-turbo",  # Model name; can be any string
+    #             messages=[
+    #                 {"role": "system", "content": "You are a helpful assistant."},
+    #                 {"role": "user", "content": text}
+    #             ],
+    #             temperature=0.7,  # Adjusts randomness: 0.0 (deterministic) to 1.0 (more random)
+    #             max_tokens=500,   # Maximum number of tokens to generate
+    #             top_p=0.9,         # Nucleus sampling: considers tokens that comprise the top P probability mass
+    #         )
+    #         return response.choices[0].message.content.strip()
+    #     except Exception as e:
+    #         print(f"Error sending to llama.cpp server: {e}")
+    #         return "Error communicating with llama.cpp server"
