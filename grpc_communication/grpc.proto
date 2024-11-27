@@ -3,9 +3,12 @@ syntax = "proto3";
 service MediaService {
     // RPC method to send audio data
     rpc SendAudio(AudioRequest) returns (AudioResponse);
-    
+
     // RPC method to send image data
     rpc SendImage(ImageRequest) returns (ImageResponse);
+
+    // New RPC method to send audio data and stream text response
+    rpc LLmResponse(AudioRequest) returns (stream TextChunk);
 }
 
 // Message for sending audio data
@@ -15,6 +18,12 @@ message AudioRequest {
     int32 num_channels = 3;        // Number of channels (e.g., 1 for mono, 2 for stereo)
     string encoding = 4;           // Encoding format (e.g., "PCM_16", "MP3")
     string description = 5;        // Optional description or label for the audio
+}
+
+// New message for streamed text chunks
+message TextChunk {
+    string text = 1;              // Chunk of transcribed/generated text
+    bool is_final = 2;            // Indicates if this is the final chunk
 }
 
 // Message for audio response

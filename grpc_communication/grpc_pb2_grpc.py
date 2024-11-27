@@ -24,6 +24,11 @@ class MediaServiceStub(object):
                 request_serializer=grpc__pb2.ImageRequest.SerializeToString,
                 response_deserializer=grpc__pb2.ImageResponse.FromString,
                 )
+        self.LLmResponse = channel.unary_stream(
+                '/MediaService/LLmResponse',
+                request_serializer=grpc__pb2.AudioRequest.SerializeToString,
+                response_deserializer=grpc__pb2.TextChunk.FromString,
+                )
 
 
 class MediaServiceServicer(object):
@@ -43,6 +48,13 @@ class MediaServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def LLmResponse(self, request, context):
+        """New RPC method to send audio data and stream text response
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_MediaServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -55,6 +67,11 @@ def add_MediaServiceServicer_to_server(servicer, server):
                     servicer.SendImage,
                     request_deserializer=grpc__pb2.ImageRequest.FromString,
                     response_serializer=grpc__pb2.ImageResponse.SerializeToString,
+            ),
+            'LLmResponse': grpc.unary_stream_rpc_method_handler(
+                    servicer.LLmResponse,
+                    request_deserializer=grpc__pb2.AudioRequest.FromString,
+                    response_serializer=grpc__pb2.TextChunk.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -97,5 +114,22 @@ class MediaService(object):
         return grpc.experimental.unary_unary(request, target, '/MediaService/SendImage',
             grpc__pb2.ImageRequest.SerializeToString,
             grpc__pb2.ImageResponse.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def LLmResponse(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(request, target, '/MediaService/LLmResponse',
+            grpc__pb2.AudioRequest.SerializeToString,
+            grpc__pb2.TextChunk.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
