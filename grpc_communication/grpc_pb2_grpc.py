@@ -26,7 +26,7 @@ class MediaServiceStub(object):
                 )
         self.LLmResponse = channel.unary_stream(
                 '/MediaService/LLmResponse',
-                request_serializer=grpc__pb2.AudioRequest.SerializeToString,
+                request_serializer=grpc__pb2.SessionRequest.SerializeToString,
                 response_deserializer=grpc__pb2.TextChunk.FromString,
                 )
 
@@ -70,7 +70,7 @@ def add_MediaServiceServicer_to_server(servicer, server):
             ),
             'LLmResponse': grpc.unary_stream_rpc_method_handler(
                     servicer.LLmResponse,
-                    request_deserializer=grpc__pb2.AudioRequest.FromString,
+                    request_deserializer=grpc__pb2.SessionRequest.FromString,
                     response_serializer=grpc__pb2.TextChunk.SerializeToString,
             ),
     }
@@ -129,7 +129,7 @@ class MediaService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_stream(request, target, '/MediaService/LLmResponse',
-            grpc__pb2.AudioRequest.SerializeToString,
+            grpc__pb2.SessionRequest.SerializeToString,
             grpc__pb2.TextChunk.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

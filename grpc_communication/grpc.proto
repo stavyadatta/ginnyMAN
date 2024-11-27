@@ -8,7 +8,7 @@ service MediaService {
     rpc SendImage(ImageRequest) returns (ImageResponse);
 
     // New RPC method to send audio data and stream text response
-    rpc LLmResponse(AudioRequest) returns (stream TextChunk);
+    rpc LLmResponse(SessionRequest) returns (stream TextChunk);
 }
 
 // Message for sending audio data
@@ -47,3 +47,6 @@ message ImageResponse {
     string message = 2;            // Additional response message or details
 }
 
+message SessionRequest {
+    string session_id = 1;       // Unique identifier for the session
+}
