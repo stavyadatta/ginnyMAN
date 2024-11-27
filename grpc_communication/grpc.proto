@@ -40,6 +40,7 @@ message ImageRequest {
     int32 width = 3;               // Image width in pixels
     int32 height = 4;              // Image height in pixels
     string description = 5;        // Optional description or label for the image
+    string session_id = 6;          // Unique session id identifier
 }
 
 // Message for image response
