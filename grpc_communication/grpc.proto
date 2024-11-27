@@ -18,6 +18,7 @@ message AudioRequest {
     int32 num_channels = 3;        // Number of channels (e.g., 1 for mono, 2 for stereo)
     string encoding = 4;           // Encoding format (e.g., "PCM_16", "MP3")
     string description = 5;        // Optional description or label for the audio
+    string session_id = 6;          // Unique session id identifier
 }
 
 // New message for streamed text chunks

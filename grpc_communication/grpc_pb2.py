@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\ngrpc.proto\"t\n\x0c\x41udioRequest\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x13\n\x0bsample_rate\x18\x02 \x01(\x05\x12\x14\n\x0cnum_channels\x18\x03 \x01(\x05\x12\x10\n\x08\x65ncoding\x18\x04 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x05 \x01(\t\"+\n\tTextChunk\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x10\n\x08is_final\x18\x02 \x01(\x08\"0\n\rAudioResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\"f\n\x0cImageRequest\x12\x12\n\nimage_data\x18\x01 \x01(\x0c\x12\x0e\n\x06\x66ormat\x18\x02 \x01(\t\x12\r\n\x05width\x18\x03 \x01(\x05\x12\x0e\n\x06height\x18\x04 \x01(\x05\x12\x13\n\x0b\x64\x65scription\x18\x05 \x01(\t\"0\n\rImageResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\"$\n\x0eSessionRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t2\x94\x01\n\x0cMediaService\x12*\n\tSendAudio\x12\r.AudioRequest\x1a\x0e.AudioResponse\x12*\n\tSendImage\x12\r.ImageRequest\x1a\x0e.ImageResponse\x12,\n\x0bLLmResponse\x12\x0f.SessionRequest\x1a\n.TextChunk0\x01\x62\x06proto3'
+  serialized_pb=b'\n\ngrpc.proto\"\x88\x01\n\x0c\x41udioRequest\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x13\n\x0bsample_rate\x18\x02 \x01(\x05\x12\x14\n\x0cnum_channels\x18\x03 \x01(\x05\x12\x10\n\x08\x65ncoding\x18\x04 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x05 \x01(\t\x12\x12\n\nsession_id\x18\x06 \x01(\t\"+\n\tTextChunk\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x10\n\x08is_final\x18\x02 \x01(\x08\"0\n\rAudioResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\"f\n\x0cImageRequest\x12\x12\n\nimage_data\x18\x01 \x01(\x0c\x12\x0e\n\x06\x66ormat\x18\x02 \x01(\t\x12\r\n\x05width\x18\x03 \x01(\x05\x12\x0e\n\x06height\x18\x04 \x01(\x05\x12\x13\n\x0b\x64\x65scription\x18\x05 \x01(\t\"0\n\rImageResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\"$\n\x0eSessionRequest\x12\x12\n\nsession_id\x18\x01 \x01(\t2\x94\x01\n\x0cMediaService\x12*\n\tSendAudio\x12\r.AudioRequest\x1a\x0e.AudioResponse\x12*\n\tSendImage\x12\r.ImageRequest\x1a\x0e.ImageResponse\x12,\n\x0bLLmResponse\x12\x0f.SessionRequest\x1a\n.TextChunk0\x01\x62\x06proto3'
 )
 
 
@@ -68,6 +68,13 @@ _AUDIOREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='session_id', full_name='AudioRequest.session_id', index=5,
+      number=6, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -80,8 +87,8 @@ _AUDIOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=14,
-  serialized_end=130,
+  serialized_start=15,
+  serialized_end=151,
 )
 
 
@@ -119,8 +126,8 @@ _TEXTCHUNK = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=132,
-  serialized_end=175,
+  serialized_start=153,
+  serialized_end=196,
 )
 
 
@@ -158,8 +165,8 @@ _AUDIORESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=177,
-  serialized_end=225,
+  serialized_start=198,
+  serialized_end=246,
 )
 
 
@@ -218,8 +225,8 @@ _IMAGEREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=227,
-  serialized_end=329,
+  serialized_start=248,
+  serialized_end=350,
 )
 
 
@@ -257,8 +264,8 @@ _IMAGERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=331,
-  serialized_end=379,
+  serialized_start=352,
+  serialized_end=400,
 )
 
 
@@ -289,8 +296,8 @@ _SESSIONREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=381,
-  serialized_end=417,
+  serialized_start=402,
+  serialized_end=438,
 )
 
 DESCRIPTOR.message_types_by_name['AudioRequest'] = _AUDIOREQUEST
@@ -352,8 +359,8 @@ _MEDIASERVICE = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=420,
-  serialized_end=568,
+  serialized_start=441,
+  serialized_end=589,
   methods=[
   _descriptor.MethodDescriptor(
     name='SendAudio',
