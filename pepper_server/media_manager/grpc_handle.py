@@ -2,14 +2,15 @@ import os
 import time
 import wave
 
-from grpc_pb2 import AudioResponse
+from grpc_pb2 import AudioResponse, TextChunk
 from grpc_pb2_grpc import MediaServiceServicer
 
 class MediaManager(MediaServiceServicer):
-    def __init__(self, audio_queue, audio_save=False):
+    def __init__(self, audio_queue, llama_response_queue, audio_save=False):
         super().__init__()
         self.audio_queue = audio_queue
         self.audio_save = audio_save
+        self.llama_response_queue = llama_response_queue
 
         if self.audio_save:
             self.save_directory = "./recordings_stavya/"
@@ -61,3 +62,15 @@ class MediaManager(MediaServiceServicer):
             status='success',
             message='Audio Data is received successfully'
         ) 
+
+    def LLmResponse(self, request, context):
+        try:
+            while True:
+                chunk = self.llama_response_queue.get()
+                if chunk is None:
+                    break
+                yield TextChunk(text=chunk['text'], is_final=chunk['is_final'])
+                if chunk['is_final']:
+                    break
+        except Exception as e:
+            print(f"Error in the LLmResponse: {e}")
