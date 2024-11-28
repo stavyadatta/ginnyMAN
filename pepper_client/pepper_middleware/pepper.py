@@ -1,20 +1,25 @@
 import qi
 import io
+import sys
 import grpc
 import time
 import argparse
 from PIL import Image
 from io import BytesIO
+from google.protobuf.empty_pb2 import Empty
 
 
 from grpc_communication.grpc_pb2 import ImageRequest, AudioRequest
 from grpc_communication.grpc_pb2_grpc import MediaServiceStub
 from pepper_api import CameraManager, AudioManager2, HeadManager, EyeLEDManager, \
-    SpeechManager
+    SpeechManager, SpeechProcessor
+
 
 class Pepper():
-    def __init__(self, connection_url):
-        app = qi.Application(["AudioManager2", "--qi-url=" + connection_url])
+    def __init__(self, pepper_connection_url, stub):
+        self.stub = stub
+
+        app = qi.Application(["AudioManager2", "--qi-url=" + pepper_connection_url])
         app.start()
         self.session = app.session
 
@@ -46,9 +51,6 @@ class Pepper():
 
     def send_img(self):
         # Add your image sending gprc code here
-        channel = grpc.insecure_channel("localhost:50051")
-        stub = MediaServiceStub(channel)
-
         while True:
             raw_image = self.get_image()
 
@@ -73,7 +75,7 @@ class Pepper():
 
             # Send the request to the gRPC server
             try:
-                response = stub.SendImage(request)
+                response = self.stub.SendImage(request)
                 # print(f"Response from server: {response.status} - {response.message}")
             except grpc.RpcError as e:
                 # print(f"gRPC error: {e.code()} - {e.details()}")
@@ -81,37 +83,39 @@ class Pepper():
             
 
     def send_audio(self):
-        # Add your audio sending grpc code here
-        # Connect to gRPC server
-        channel = grpc.insecure_channel("localhost:50051")
-        stub = MediaServiceStub(channel)
+        audio_data, sample_rate = self.get_audio()
 
-        while True:  # Continuously send audio
-            audio_data, sample_rate = self.get_audio()
+        request = AudioRequest(
+            audio_data=audio_data,
+            sample_rate=sample_rate,
+            num_channels=1,  # Assuming mono audio
+            encoding="PCM_16",
+            description="Audio captured by Pepper"
+        )
 
-            # Convert audio data to bytes if needed
-            # if isinstance(audio_data, list):
-            #     audio_data = bytes(audio_data)
+        # Send the request to the gRPC server
+        try:
+            response = self.stub.SendAudio(request)
+        except grpc.RpcError as e:
+            print("gRPC in sending audio error: {} - " \
+            "{}".format(e.code(), e.details()))
 
-            request = AudioRequest(
-                audio_data=audio_data,
-                sample_rate=sample_rate,
-                num_channels=1,  # Assuming mono audio
-                encoding="PCM_16",
-                description="Audio captured by Pepper"
-            )
+        time.sleep(1)  # Adjust delay as needed
 
-            # Send the request to the gRPC server
-            try:
-                response = stub.SendAudio(request)
-                # print(f"Response from server: {response.status} - {response.message}")
-                #print("soine")
-            except grpc.RpcError as e:
-                print("yeup")
-                # print(f"gRPC error: {e.code()} - {e.details()}")
+    def receive_llm_response(self):
+        request = Empty()
+        try:
+            response_stream = stub.LLmResponse(request)
+            print("Received streamed text chunks")
+            for chunk in response_stream:
+                sys.stdout.write(chunk.text)
+                sys.stdout.flush()
+                self.speech_manager.say(chunk.text)
+                if chunk.is_final:
+                    break
+        except grpc.RpcError as e:
+            print("gRPC llm response error: {} - {}".format(e.code(), e.details()))
 
-            time.sleep(1)  # Adjust delay as needed
-        pass
 
     def close(self):
     # Shut down services and clean up resources
@@ -125,16 +129,22 @@ class Pepper():
         self.session.close()
         print("Pepper resources have been cleaned up.")
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Please enter Pepper's IP address (and optional port number)")
     parser.add_argument("--ip", type=str, nargs='?', default="192.168.0.52")
     parser.add_argument("--port", type=int, nargs='?', default=9559)
     args = parser.parse_args()
-    connection_url = "tcp://" + args.ip + ":" + str(args.port)
-    p = Pepper(connection_url=connection_url)
+
+    pepper_connection_url = "tcp://" + args.ip + ":" + str(args.port)
+    
+    channel = grpc.insecure_channel("172.27.72.27:50051")
+    stub = MediaServiceStub(channel)
+    
+    p = Pepper(pepper_connection_url, stub)
     try:
-        p.send_audio()
+        while True:
+            p.send_audio()
+            p.receive_llm_response()
     except KeyboardInterrupt:
         print("Program interrupted by user.")
     finally:
