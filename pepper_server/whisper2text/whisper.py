@@ -52,6 +52,6 @@ class WhisperSpeechToText:
             whisper.pad_or_trim(whisper.load_audio(temp_recording))
         ).float()
         # Run Whisper to transcribe the audio
-        result = self.model.transcribe(audio_tensor)
+        result = self.model.transcribe(audio_tensor, language='en')
         return result["text"]
 

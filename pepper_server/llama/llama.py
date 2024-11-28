@@ -25,11 +25,11 @@ class Llama:
             response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",  # Model name; can be any string
                 messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "system", "content": "You are a helpful assistant (under 20 words)."},
                     {"role": "user", "content": text}
                 ],
                 temperature=0.7,  # Adjusts randomness: 0.0 (deterministic) to 1.0 (more random)
-                max_tokens=500,   # Maximum number of tokens to generate
+                max_tokens=100,   # Maximum number of tokens to generate
                 top_p=0.9,         # Nucleus sampling: considers tokens that comprise the top P probability mass
                 stream=True        # Enable streaming responses
             )

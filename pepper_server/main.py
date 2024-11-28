@@ -12,7 +12,7 @@ import grpc_communication.grpc_pb2_grpc as pb2_grpc
 
 def process_audio(audio_queue: queue.Queue, 
                   llama_response_queue: queue.Queue, 
-                  whisper_model, 
+                  whisper_model: WhisperSpeechToText, 
                   llama_handler: Llama):
     """
     Process audio data from the queue: transcribe and send to llama.cpp.
