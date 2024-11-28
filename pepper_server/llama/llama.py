@@ -33,7 +33,6 @@ class Llama:
                 top_p=0.9,         # Nucleus sampling: considers tokens that comprise the top P probability mass
                 stream=True        # Enable streaming responses
             )
-            print("The response data structure is ", response)
             for chunk in response:
                 if chunk.choices[0].delta.content is not None:
                      yield chunk.choices[0].delta.content
