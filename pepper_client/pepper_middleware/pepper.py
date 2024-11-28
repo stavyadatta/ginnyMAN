@@ -6,6 +6,7 @@ import time
 import argparse
 from PIL import Image
 from io import BytesIO
+from threading import Thread
 from google.protobuf.empty_pb2 import Empty
 
 
@@ -103,18 +104,25 @@ class Pepper():
         time.sleep(1)  # Adjust delay as needed
 
     def receive_llm_response(self):
+        speech_processor = SpeechProcessor(self.speech_manager)
+        
         request = Empty()
-        try:
-            response_stream = stub.LLmResponse(request)
-            print("Received streamed text chunks")
-            for chunk in response_stream:
-                sys.stdout.write(chunk.text)
-                sys.stdout.flush()
-                self.speech_manager.say(chunk.text)
-                if chunk.is_final:
-                    break
-        except grpc.RpcError as e:
-            print("gRPC llm response error: {} - {}".format(e.code(), e.details()))
+        response_stream = stub.LLmResponse(request)
+
+
+        builder_thread = Thread(
+            target=speech_processor.build_sentences, 
+            args=(response_stream,)
+        )
+        speaker_thread = Thread(target=speech_processor.say_sentences)
+
+        builder_thread.start()
+        speaker_thread.start()
+
+        # Wait for threads to complete
+        builder_thread.join()
+        speech_processor.is_running = False
+        speaker_thread.join()
 
 
     def close(self):

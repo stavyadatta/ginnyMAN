@@ -8,110 +8,52 @@ import sys
 import soundfile as sf
 
 class AudioManager2(object):
-    def __init__(self,session):
-        super(AudioManager2,self).__init__()      
+    def __init__(self, session, recording_duration=2):
+        super(AudioManager2, self).__init__()
         self.module_name = "AudioManager2"
-        # Get the services
-        # self.audio_service = session.service("ALAudioDevice")
-        # Enable energy input compution 
-        # Audio recording setting
-
         self.threshold = 1000
-        self.silence_duration = 1
         self.is_recording = False
         self.last_sound_time = None
         self.sample_rate = 16000
-        #self.channels = [0,0,1,0]  # use front microphone
-        self.channels = 3  # use front microphone
-        self.isProcessingDone = False
-        # Audio file setting 
-        self.tmppath = "./recordings/"
-        self.recording_count = 0
-        self.wavfile = self.tmppath + "recording" + str(self.recording_count) + ".wav"
-        self.rawfile = self.tmppath + "rawrecording" + str(self.recording_count) + ".raw"
-        self.framesCount = 0
-        self.nbOfFramesToProcess =30
-        self.isRecording = False
-        self.sound_list = [3000]
+        self.channels = 1  # Mono audio
+        self.recording_duration = recording_duration  # Target duration in seconds
+        self.target_frames = self.sample_rate * self.channels * self.recording_duration
         self.audio_data_buffer = io.BytesIO()
-
         print("Subscribed to audio service...")
 
-
     def init_service(self, session):
-        services = session.services()
-        for service in services:
-            print(service)
-        print("\n")
         self.audio_service = session.service("ALAudioDevice")
         self.audio_service.enableEnergyComputation()
 
     def processRemote(self, nbOfChannels, nbOfSamplesByChannel, timeStamp, inputBuffer):
         """
-        Record the audio data from the front microphone depend on the sound threshold
+        Record the audio data and accumulate until the target duration is reached.
         """
+        self.audio_data_buffer.write(inputBuffer)
+        current_frames = len(self.audio_data_buffer.getvalue()) // 2  # Each sample is 2 bytes (PCM_16)
 
-        front_energy = self.getSound()
-        self.sound_list.append(front_energy)
-        if len(self.sound_list) > 200:
-            self.sound_list.pop(0)
-        #self.threshold =  (np.sum(self.sound_list)/ len(self.sound_list))*1.2
-        print("Front energy: ", front_energy)
-
-        print("Statues before: ", self.isRecording)
-        if self.isRecording: # If is recording:
-            #print("count", self.framesCount)
-            if front_energy < self.threshold:
-                print("current frame", self.framesCount)
-                self.framesCount += 1
-            else:
-                print("reset count")
-                self.framesCount = 1
-            # self.rawoutput.write(inputBuffer)
-            self.audio_data_buffer.write(inputBuffer)
-            self.last_sound_time = time.time()
-        else:
-            if front_energy > self.threshold:
-                self.isRecording = True
-                self.framesCount = 0
-                print("start_processing status changed")
-                #print("Front energy: ", front_energy)
-        if self.framesCount > self.nbOfFramesToProcess:
+        if current_frames >= self.target_frames:
             self.isProcessingDone = True
-            self.rawoutput.close()
-            self.framesCount = 0
-            print("Recordng finished")
-
+            print("Reached target duration of {} seconds".format(self.recording_duration))
 
     def startProcessing(self):
         """
-        Subscribe the service and return the audio data
+        Subscribe the service and return the accumulated audio data.
         """
         self.isProcessingDone = False
         self.audio_data_buffer = io.BytesIO()
 
-        self.audio_service.setClientPreferences("AudioManager2", 
+        self.audio_service.setClientPreferences(self.module_name, 
                                                 self.sample_rate, self.channels, 0)
-        self.audio_service.subscribe("AudioManager2")
+        self.audio_service.subscribe(self.module_name)
         while not self.isProcessingDone:
             time.sleep(0.1)
-        self.audio_service.unsubscribe("AudioManager2")
+        self.audio_service.unsubscribe(self.module_name)
 
-        # Read the data from the buffer and save it as a numpy array
+        # Get accumulated audio data
         self.audio_data_buffer.seek(0)
-        data = self.audio_data_buffer.read()
-        # with sf.SoundFile(self.audio_data_buffer, mode='r', samplerate=self.sample_rate,
-        #                 channels=1, subtype='PCM_16', format='RAW') as f:
-        #     data = f.read()
-        #     samplerate = f.samplerate
-        return data, self.sample_rate
-
-    def getSound(self):
-        return self.audio_service.getFrontMicEnergy()
-
-    def exceed_threshold(self):
-        return self.getSound() > self.threshold
-    
+        audio_data = self.audio_data_buffer.read()
+        return audio_data, self.sample_rate
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -131,17 +73,3 @@ if __name__ == "__main__":
                                                                                               "script arguments. Run "
                                                                                               "with -h option for "
                                                                                               "help.")
-        sys.exit(1)
-
-    app.start() 
-    MyAudioManager = AudioManager2(app.session)
-    print("audioManager.module_name:" + MyAudioManager.module_name)
-    #MyAudioManager.audio_service.unsubscribe(MyAudioManager.module_name)
-    app.session.registerService(MyAudioManager.module_name, MyAudioManager)
-    # Start processing the audio data
-    print("Start processing the audio data...")
-    count = 0
-    while count < 10:
-        audio_data = MyAudioManager.startProcessing()
-        #print("Audio data: ", audio_data)
-        count += 1
