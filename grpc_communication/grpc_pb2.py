@@ -20,52 +20,87 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\ngrpc.proto\x1a\x1bgoogle/protobuf/empty.proto\"t\n\x0c\x41udioRequest\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x13\n\x0bsample_rate\x18\x02 \x01(\x05\x12\x14\n\x0cnum_channels\x18\x03 \x01(\x05\x12\x10\n\x08\x65ncoding\x18\x04 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x05 \x01(\t\"+\n\tTextChunk\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x10\n\x08is_final\x18\x02 \x01(\x08\"0\n\rAudioResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\"f\n\x0cImageRequest\x12\x12\n\nimage_data\x18\x01 \x01(\x0c\x12\x0e\n\x06\x66ormat\x18\x02 \x01(\t\x12\r\n\x05width\x18\x03 \x01(\x05\x12\x0e\n\x06height\x18\x04 \x01(\x05\x12\x13\n\x0b\x64\x65scription\x18\x05 \x01(\t\"0\n\rImageResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t2\x9b\x01\n\x0cMediaService\x12*\n\tSendAudio\x12\r.AudioRequest\x1a\x0e.AudioResponse\x12*\n\tSendImage\x12\r.ImageRequest\x1a\x0e.ImageResponse\x12\x33\n\x0bLLmResponse\x12\x16.google.protobuf.Empty\x1a\n.TextChunk0\x01\x62\x06proto3'
+  serialized_pb=b'\n\ngrpc.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xf3\x01\n\x0f\x41udioImgRequest\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x13\n\x0bsample_rate\x18\x02 \x01(\x05\x12\x14\n\x0cnum_channels\x18\x03 \x01(\x05\x12\x16\n\x0e\x61udio_encoding\x18\x04 \x01(\t\x12\x19\n\x11\x61udio_description\x18\x05 \x01(\t\x12\x12\n\nimage_data\x18\x06 \x01(\x0c\x12\x14\n\x0cimage_format\x18\x07 \x01(\t\x12\x13\n\x0bimage_width\x18\x08 \x01(\x05\x12\x14\n\x0cimage_height\x18\t \x01(\x05\x12\x19\n\x11image_description\x18\n \x01(\t\"3\n\x10\x41udioImgResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\"+\n\tTextChunk\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x10\n\x08is_final\x18\x02 \x01(\x08\x32x\n\x0cMediaService\x12\x33\n\x0cSendAudioImg\x12\x10.AudioImgRequest\x1a\x11.AudioImgResponse\x12\x33\n\x0bLLmResponse\x12\x16.google.protobuf.Empty\x1a\n.TextChunk0\x01\x62\x06proto3'
   ,
   dependencies=[google_dot_protobuf_dot_empty__pb2.DESCRIPTOR,])
 
 
 
 
-_AUDIOREQUEST = _descriptor.Descriptor(
-  name='AudioRequest',
-  full_name='AudioRequest',
+_AUDIOIMGREQUEST = _descriptor.Descriptor(
+  name='AudioImgRequest',
+  full_name='AudioImgRequest',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   create_key=_descriptor._internal_create_key,
   fields=[
     _descriptor.FieldDescriptor(
-      name='audio_data', full_name='AudioRequest.audio_data', index=0,
+      name='audio_data', full_name='AudioImgRequest.audio_data', index=0,
       number=1, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=b"",
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='sample_rate', full_name='AudioRequest.sample_rate', index=1,
+      name='sample_rate', full_name='AudioImgRequest.sample_rate', index=1,
       number=2, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='num_channels', full_name='AudioRequest.num_channels', index=2,
+      name='num_channels', full_name='AudioImgRequest.num_channels', index=2,
       number=3, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='encoding', full_name='AudioRequest.encoding', index=3,
+      name='audio_encoding', full_name='AudioImgRequest.audio_encoding', index=3,
       number=4, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='description', full_name='AudioRequest.description', index=4,
+      name='audio_description', full_name='AudioImgRequest.audio_description', index=4,
       number=5, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='image_data', full_name='AudioImgRequest.image_data', index=5,
+      number=6, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='image_format', full_name='AudioImgRequest.image_format', index=6,
+      number=7, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='image_width', full_name='AudioImgRequest.image_width', index=7,
+      number=8, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='image_height', full_name='AudioImgRequest.image_height', index=8,
+      number=9, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='image_description', full_name='AudioImgRequest.image_description', index=9,
+      number=10, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=b"".decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -82,8 +117,47 @@ _AUDIOREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=43,
-  serialized_end=159,
+  serialized_start=44,
+  serialized_end=287,
+)
+
+
+_AUDIOIMGRESPONSE = _descriptor.Descriptor(
+  name='AudioImgResponse',
+  full_name='AudioImgResponse',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='status', full_name='AudioImgResponse.status', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='message', full_name='AudioImgResponse.message', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=289,
+  serialized_end=340,
 )
 
 
@@ -121,161 +195,28 @@ _TEXTCHUNK = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=161,
-  serialized_end=204,
+  serialized_start=342,
+  serialized_end=385,
 )
 
-
-_AUDIORESPONSE = _descriptor.Descriptor(
-  name='AudioResponse',
-  full_name='AudioResponse',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='status', full_name='AudioResponse.status', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='message', full_name='AudioResponse.message', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=206,
-  serialized_end=254,
-)
-
-
-_IMAGEREQUEST = _descriptor.Descriptor(
-  name='ImageRequest',
-  full_name='ImageRequest',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='image_data', full_name='ImageRequest.image_data', index=0,
-      number=1, type=12, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"",
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='format', full_name='ImageRequest.format', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='width', full_name='ImageRequest.width', index=2,
-      number=3, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='height', full_name='ImageRequest.height', index=3,
-      number=4, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='description', full_name='ImageRequest.description', index=4,
-      number=5, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=256,
-  serialized_end=358,
-)
-
-
-_IMAGERESPONSE = _descriptor.Descriptor(
-  name='ImageResponse',
-  full_name='ImageResponse',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='status', full_name='ImageResponse.status', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-    _descriptor.FieldDescriptor(
-      name='message', full_name='ImageResponse.message', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=b"".decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=360,
-  serialized_end=408,
-)
-
-DESCRIPTOR.message_types_by_name['AudioRequest'] = _AUDIOREQUEST
+DESCRIPTOR.message_types_by_name['AudioImgRequest'] = _AUDIOIMGREQUEST
+DESCRIPTOR.message_types_by_name['AudioImgResponse'] = _AUDIOIMGRESPONSE
 DESCRIPTOR.message_types_by_name['TextChunk'] = _TEXTCHUNK
-DESCRIPTOR.message_types_by_name['AudioResponse'] = _AUDIORESPONSE
-DESCRIPTOR.message_types_by_name['ImageRequest'] = _IMAGEREQUEST
-DESCRIPTOR.message_types_by_name['ImageResponse'] = _IMAGERESPONSE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
-AudioRequest = _reflection.GeneratedProtocolMessageType('AudioRequest', (_message.Message,), {
-  'DESCRIPTOR' : _AUDIOREQUEST,
+AudioImgRequest = _reflection.GeneratedProtocolMessageType('AudioImgRequest', (_message.Message,), {
+  'DESCRIPTOR' : _AUDIOIMGREQUEST,
   '__module__' : 'grpc_pb2'
-  # @@protoc_insertion_point(class_scope:AudioRequest)
+  # @@protoc_insertion_point(class_scope:AudioImgRequest)
   })
-_sym_db.RegisterMessage(AudioRequest)
+_sym_db.RegisterMessage(AudioImgRequest)
+
+AudioImgResponse = _reflection.GeneratedProtocolMessageType('AudioImgResponse', (_message.Message,), {
+  'DESCRIPTOR' : _AUDIOIMGRESPONSE,
+  '__module__' : 'grpc_pb2'
+  # @@protoc_insertion_point(class_scope:AudioImgResponse)
+  })
+_sym_db.RegisterMessage(AudioImgResponse)
 
 TextChunk = _reflection.GeneratedProtocolMessageType('TextChunk', (_message.Message,), {
   'DESCRIPTOR' : _TEXTCHUNK,
@@ -283,27 +224,6 @@ TextChunk = _reflection.GeneratedProtocolMessageType('TextChunk', (_message.Mess
   # @@protoc_insertion_point(class_scope:TextChunk)
   })
 _sym_db.RegisterMessage(TextChunk)
-
-AudioResponse = _reflection.GeneratedProtocolMessageType('AudioResponse', (_message.Message,), {
-  'DESCRIPTOR' : _AUDIORESPONSE,
-  '__module__' : 'grpc_pb2'
-  # @@protoc_insertion_point(class_scope:AudioResponse)
-  })
-_sym_db.RegisterMessage(AudioResponse)
-
-ImageRequest = _reflection.GeneratedProtocolMessageType('ImageRequest', (_message.Message,), {
-  'DESCRIPTOR' : _IMAGEREQUEST,
-  '__module__' : 'grpc_pb2'
-  # @@protoc_insertion_point(class_scope:ImageRequest)
-  })
-_sym_db.RegisterMessage(ImageRequest)
-
-ImageResponse = _reflection.GeneratedProtocolMessageType('ImageResponse', (_message.Message,), {
-  'DESCRIPTOR' : _IMAGERESPONSE,
-  '__module__' : 'grpc_pb2'
-  # @@protoc_insertion_point(class_scope:ImageResponse)
-  })
-_sym_db.RegisterMessage(ImageResponse)
 
 
 
@@ -314,33 +234,23 @@ _MEDIASERVICE = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=411,
-  serialized_end=566,
+  serialized_start=387,
+  serialized_end=507,
   methods=[
   _descriptor.MethodDescriptor(
-    name='SendAudio',
-    full_name='MediaService.SendAudio',
+    name='SendAudioImg',
+    full_name='MediaService.SendAudioImg',
     index=0,
     containing_service=None,
-    input_type=_AUDIOREQUEST,
-    output_type=_AUDIORESPONSE,
-    serialized_options=None,
-    create_key=_descriptor._internal_create_key,
-  ),
-  _descriptor.MethodDescriptor(
-    name='SendImage',
-    full_name='MediaService.SendImage',
-    index=1,
-    containing_service=None,
-    input_type=_IMAGEREQUEST,
-    output_type=_IMAGERESPONSE,
+    input_type=_AUDIOIMGREQUEST,
+    output_type=_AUDIOIMGRESPONSE,
     serialized_options=None,
     create_key=_descriptor._internal_create_key,
   ),
   _descriptor.MethodDescriptor(
     name='LLmResponse',
     full_name='MediaService.LLmResponse',
-    index=2,
+    index=1,
     containing_service=None,
     input_type=google_dot_protobuf_dot_empty__pb2._EMPTY,
     output_type=_TEXTCHUNK,

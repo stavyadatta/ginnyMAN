@@ -15,15 +15,10 @@ class MediaServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.SendAudio = channel.unary_unary(
-                '/MediaService/SendAudio',
-                request_serializer=grpc__pb2.AudioRequest.SerializeToString,
-                response_deserializer=grpc__pb2.AudioResponse.FromString,
-                )
-        self.SendImage = channel.unary_unary(
-                '/MediaService/SendImage',
-                request_serializer=grpc__pb2.ImageRequest.SerializeToString,
-                response_deserializer=grpc__pb2.ImageResponse.FromString,
+        self.SendAudioImg = channel.unary_unary(
+                '/MediaService/SendAudioImg',
+                request_serializer=grpc__pb2.AudioImgRequest.SerializeToString,
+                response_deserializer=grpc__pb2.AudioImgResponse.FromString,
                 )
         self.LLmResponse = channel.unary_stream(
                 '/MediaService/LLmResponse',
@@ -35,15 +30,8 @@ class MediaServiceStub(object):
 class MediaServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def SendAudio(self, request, context):
-        """RPC method to send audio data
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def SendImage(self, request, context):
-        """RPC method to send image data
+    def SendAudioImg(self, request, context):
+        """RPC method to send audio and image data together
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -59,15 +47,10 @@ class MediaServiceServicer(object):
 
 def add_MediaServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'SendAudio': grpc.unary_unary_rpc_method_handler(
-                    servicer.SendAudio,
-                    request_deserializer=grpc__pb2.AudioRequest.FromString,
-                    response_serializer=grpc__pb2.AudioResponse.SerializeToString,
-            ),
-            'SendImage': grpc.unary_unary_rpc_method_handler(
-                    servicer.SendImage,
-                    request_deserializer=grpc__pb2.ImageRequest.FromString,
-                    response_serializer=grpc__pb2.ImageResponse.SerializeToString,
+            'SendAudioImg': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendAudioImg,
+                    request_deserializer=grpc__pb2.AudioImgRequest.FromString,
+                    response_serializer=grpc__pb2.AudioImgResponse.SerializeToString,
             ),
             'LLmResponse': grpc.unary_stream_rpc_method_handler(
                     servicer.LLmResponse,
@@ -85,7 +68,7 @@ class MediaService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def SendAudio(request,
+    def SendAudioImg(request,
             target,
             options=(),
             channel_credentials=None,
@@ -95,26 +78,9 @@ class MediaService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/MediaService/SendAudio',
-            grpc__pb2.AudioRequest.SerializeToString,
-            grpc__pb2.AudioResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def SendImage(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/MediaService/SendImage',
-            grpc__pb2.ImageRequest.SerializeToString,
-            grpc__pb2.ImageResponse.FromString,
+        return grpc.experimental.unary_unary(request, target, '/MediaService/SendAudioImg',
+            grpc__pb2.AudioImgRequest.SerializeToString,
+            grpc__pb2.AudioImgResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 

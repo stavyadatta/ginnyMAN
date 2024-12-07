@@ -3,23 +3,32 @@ syntax = "proto3";
 import "google/protobuf/empty.proto";
 
 service MediaService {
-    // RPC method to send audio data
-    rpc SendAudio(AudioRequest) returns (AudioResponse);
-
-    // RPC method to send image data
-    rpc SendImage(ImageRequest) returns (ImageResponse);
+    // RPC method to send audio and image data together
+    rpc SendAudioImg(AudioImgRequest) returns (AudioImgResponse);
 
     // New RPC method to send audio data and stream text response
     rpc LLmResponse(google.protobuf.Empty) returns (stream TextChunk);
 }
 
-// Message for sending audio data
-message AudioRequest {
+// Message for sending both image and audio data
+message AudioImgRequest {
     bytes audio_data = 1;          // Raw audio bytes
     int32 sample_rate = 2;         // Sampling rate (e.g., 16000 Hz)
     int32 num_channels = 3;        // Number of channels (e.g., 1 for mono, 2 for stereo)
-    string encoding = 4;           // Encoding format (e.g., "PCM_16", "MP3")
-    string description = 5;        // Optional description or label for the audio
+    string audio_encoding = 4;     // Encoding format for audio (e.g., "PCM_16", "MP3")
+    string audio_description = 5;  // Optional description for the audio
+
+    bytes image_data = 6;          // Raw image bytes
+    string image_format = 7;       // Image format (e.g., "JPEG", "PNG")
+    int32 image_width = 8;         // Image width in pixels
+    int32 image_height = 9;        // Image height in pixels
+    string image_description = 10; // Optional description for the image
+}
+
+// Response message for sending both image and audio data
+message AudioImgResponse {
+    string status = 1;             // Status of the operation (e.g., "success", "error")
+    string message = 2;            // Additional response message or details
 }
 
 // New message for streamed text chunks
@@ -27,25 +36,3 @@ message TextChunk {
     string text = 1;              // Chunk of transcribed/generated text
     bool is_final = 2;            // Indicates if this is the final chunk
 }
-
-// Message for audio response
-message AudioResponse {
-    string status = 1;             // Status of the operation (e.g., "success", "error")
-    string message = 2;            // Additional response message or details
-}
-
-// Message for sending image data
-message ImageRequest {
-    bytes image_data = 1;          // Raw image bytes
-    string format = 2;             // Image format (e.g., "JPEG", "PNG")
-    int32 width = 3;               // Image width in pixels
-    int32 height = 4;              // Image height in pixels
-    string description = 5;        // Optional description or label for the image
-}
-
-// Message for image response
-message ImageResponse {
-    string status = 1;             // Status of the operation (e.g., "success", "error")
-    string message = 2;            // Additional response message or details
-}
-
