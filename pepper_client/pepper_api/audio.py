@@ -68,19 +68,6 @@ class AudioManager2(object):
                     self.below_threshold_count = 0
 
 
-    # def processRemote(self, nbOfChannels, nbOfSamplesByChannel, timeStamp, inputBuffer):
-    #     """
-    #     Record the audio data and accumulate until the target duration is reached.
-    #     """
-    #     print("The front mic energy is {}".format(self.audio_service.getFrontMicEnergy()))
-    #
-    #     self.audio_data_buffer.write(inputBuffer)
-    #     current_frames = len(self.audio_data_buffer.getvalue()) // 2  # Each sample is 2 bytes (PCM_16)
-    #
-    #     if current_frames >= self.target_frames:
-    #         self.isProcessingDone = True
-    #         print("Reached target duration of {} seconds".format(self.recording_duration))
-
     def startProcessing(self):
         """
         Subscribe the service and return the accumulated audio data.
