@@ -37,7 +37,7 @@ class WhisperSpeechToText:
             print(f"Error saving audio to file: {e}")
             raise
 
-    def speech2text(self, audio_data):
+    def speech2text(self, audio_img_data):
         """
         Transcribe speech from audio data to text.
         :param audio_data: Data Object
@@ -45,7 +45,7 @@ class WhisperSpeechToText:
         """
         # Getting temp file to write the audio bytes into the 
         # wav format
-        temp_recording = self.save2temp(audio_data)
+        temp_recording = self.save2temp(audio_img_data)
 
         # Convert bytes to a torch audio tensor
         audio_tensor = torch.tensor(
