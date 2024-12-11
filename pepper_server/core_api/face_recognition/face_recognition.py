@@ -8,7 +8,7 @@ from pathlib import Path
 from insightface.app import FaceAnalysis
 from sklearn.metrics.pairwise import cosine_similarity
 
-class FaceRecognition:
+class _FaceRecognition:
     """
     A class for face recognition using the InsightFace library.
 
@@ -49,7 +49,7 @@ class FaceRecognition:
         # Load database embeddings
         self.known_ids, self.known_embeddings = self._load_database()
 
-    def recognize_face(self, img: np.ndarray) -> str:
+    def __call__(self, img: np.ndarray) -> str:
         """
         Recognize the face in the given image (as a numpy array).
 
@@ -199,7 +199,7 @@ class FaceRecognition:
 
 if __name__ == "__main__":
     # Initialize the FaceRecognition system
-    face_recognition = FaceRecognition()
+    face_recognition = _FaceRecognition()
 
     # Load the first image and save its face
     img1_path = "/workspace/database/stavya_imgs/20240325_135719.jpg"

@@ -5,14 +5,14 @@ import whisper
 import tempfile
 import atexit
 
-class WhisperSpeechToText:
+class _WhisperSpeech2Text:
     def __init__(self, model_name="base"):
         """
         Initialize the Whisper model for speech-to-text.
         """
         self.model = whisper.load_model(model_name)
 
-    def save2temp(self, audio_data):
+    def _save2temp(self, audio_data):
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
         temp_file_path = temp_file.name
         temp_file.close()
@@ -37,7 +37,7 @@ class WhisperSpeechToText:
             print(f"Error saving audio to file: {e}")
             raise
 
-    def speech2text(self, audio_img_data):
+    def __call__(self, audio_img_data):
         """
         Transcribe speech from audio data to text.
         :param audio_data: Data Object
@@ -45,7 +45,7 @@ class WhisperSpeechToText:
         """
         # Getting temp file to write the audio bytes into the 
         # wav format
-        temp_recording = self.save2temp(audio_img_data)
+        temp_recording = self._save2temp(audio_img_data)
 
         # Convert bytes to a torch audio tensor
         audio_tensor = torch.tensor(

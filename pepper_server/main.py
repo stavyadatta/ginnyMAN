@@ -2,27 +2,18 @@ import cv2
 import grpc
 import traceback
 import queue
-import numpy as np
 from concurrent import futures
 from threading import Thread
 
-from llama import Llama
-from face_recognition import FaceRecognition
-from media_manager import MediaManager
-from whisper2text import WhisperSpeechToText
+from utils import MediaManager
+from core_api import FaceRecognition, WhisperSpeech2Text
+from executor import Executor
+from reasoner import Reasoner
 import grpc_communication.grpc_pb2 as pb2
 import grpc_communication.grpc_pb2_grpc as pb2_grpc
 
-def bytes2cv2(img):
-    img_array = np.frombuffer(img, dtype=np.uint8)
-    image = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
-    return image
-
 def process_audio(audio_img_queue: queue.Queue, 
-                  llama_response_queue: queue.Queue, 
-                  whisper_model: WhisperSpeechToText, 
-                  llama_handler: Llama,
-                  face_recognition: FaceRecognition):
+                  llama_response_queue: queue.Queue):
     """
     Process audio data from the queue: transcribe and send to llama.cpp.
     :param audio_queue: Queue containing audio data.
@@ -35,17 +26,19 @@ def process_audio(audio_img_queue: queue.Queue,
             break
         try:
             # Transcribe the audio
-            transcription = whisper_model.speech2text(audio_img_item)
+            transcription = WhisperSpeech2Text(audio_img_item)
             print(f"Transcription: {transcription}")
 
             # Get the face information 
             image = audio_img_item.get("image_data")
             cv2.imwrite("/workspace/database/face_db/some.png", image)
-            face_id = face_recognition.recognize_face(image)
+            face_id = FaceRecognition(image)
 
-            # Send transcription to llama.cpp and stream the response
-            print("Llama response:")
-            for response_chunk in llama_handler.send_to_llama(transcription, face_id):
+            person_details = Reasoner(transcription, face_id)
+            response = Executor(person_details)
+
+            print("Executor response:")
+            for response_chunk in response:
                 print(response_chunk, end='', flush=True)
                 llama_response_queue.put({
                     'text': response_chunk,
@@ -66,9 +59,6 @@ def serve():
     """
     audio_img_queue = queue.Queue()
     llama_response_queue = queue.Queue()
-    whisper_model = WhisperSpeechToText(model_name="base")
-    llama_handler = Llama()
-    face_recognition = FaceRecognition()
 
     # Start the audio processing loop in a separate thread
     processing_thread = Thread(
@@ -76,9 +66,6 @@ def serve():
         args=(
             audio_img_queue, 
             llama_response_queue, 
-            whisper_model, 
-            llama_handler, 
-            face_recognition
         ), 
         daemon=True
     )
