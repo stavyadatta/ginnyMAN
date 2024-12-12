@@ -1,6 +1,6 @@
-from .neo4j_db import _Neo4j
-from .media_manager import MediaManager
 from .person_details import PersonDetails
+from .media_manager import MediaManager
+from .neo4j_db import _Neo4j
 
 Neo4j = _Neo4j()
 

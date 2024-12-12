@@ -2,7 +2,6 @@ import os
 import json
 import traceback
 from neo4j import GraphDatabase
-from scipy.optimize._lsq.trf import scale_for_robust_loss_function
 
 from utils import PersonDetails
 
@@ -16,7 +15,7 @@ class _Neo4j:
     def close(self):
         self.driver.close()
 
-    def create_or_update_person(self, face_id=None, name=None, state='speaking'):
+    def create_or_update_person(self, face_id=None, name=None, state='speak'):
             with self.driver.session() as session:
                 session.run(
                      """

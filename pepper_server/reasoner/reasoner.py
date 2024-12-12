@@ -46,9 +46,10 @@ class _Reasoner:
             total_prompt = system_prompt + user_prompt
 
             response = Llama.send_to_model(total_prompt, stream=False)
-            response_text = response['choices'][0]['message']['content']
+            response_text = response.choices[0].message.content
             print(f"The Reasoner response is {response_text}\n")
-            person_details.set_attribute("state", response_text)
+            if response_text != "no change":
+                person_details.set_attribute("state", response_text)
             person_details.add_message(user_prompt[0])
             return person_details
 

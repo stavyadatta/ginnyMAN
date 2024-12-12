@@ -6,7 +6,7 @@ Speaking = _Speaking()
 Silent = _Silent()
 
 api_call: dict[str, ApiBase] = {
-    "speaking": Speaking,
+    "speak": Speaking,
     "silent": Silent
 }
 
