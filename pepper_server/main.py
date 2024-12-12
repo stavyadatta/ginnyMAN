@@ -35,6 +35,8 @@ def process_audio(audio_img_queue: queue.Queue,
             face_id = FaceRecognition(image)
 
             person_details = Reasoner(transcription, face_id)
+            if person_details.get_attribute("state") == "vision":
+                person_details.set_image(image)
             response = Executor(person_details)
 
             print("Executor response:")

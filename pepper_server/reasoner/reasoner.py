@@ -15,12 +15,15 @@ class _Reasoner:
         system_reasoner = """
         You are an agent programmed to respond strictly according to the following rules:
 
-        If the user explicitly asks you to "speak," you must respond with "speak."
-        If the user explicitly asks you to "be silent," you must respond with "silent."
-        For any other input or scenario, respond with "no change."
+        1. If the user explicitly asks you to "speak," you must respond with "speak."
+        2. If the user explicitly asks you to "be silent," you must respond with "silent."
+        3. If the user asks something that would require vision to answer (e.g., "what's in my hand," "how do you think I look"), you must respond with "vision."
+        4. For any other input or scenario, respond with "no change."
+
         You must not deviate from these rules or provide any additional explanation or context in your responses.
-        This is a strict instructionn
+        This is a strict instruction.
         """
+
         system_dict = message_format("system", system_reasoner)
         return [system_dict]
 

@@ -1,6 +1,7 @@
 class PersonDetails:
     def __init__(self, person_dict: dict={}) -> None:
         self.person_dict = person_dict
+        self.image = None
 
     def __bool__(self):
         return bool(self.person_dict)
@@ -36,3 +37,6 @@ class PersonDetails:
             self.person_dict["messages"].append(additional_message)
         else:
             raise Exception("Detail of the person is not found, nothing to add")
+
+    def set_image(self, image):
+        self.image = image

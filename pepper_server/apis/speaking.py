@@ -10,8 +10,8 @@ class _Speaking(ApiBase):
 
     def _developing_system_prompt(self):
         system_prompt = "You are a helpful assistant (strictly under 20 words)."
-        system_dict = [{"role": "system", "content": system_prompt}]
-        return system_dict
+        system_dict = message_format("system", system_prompt)
+        return [system_dict]
         
     def __call__(self, person_details: PersonDetails) -> Any:
         messages = person_details.get_attribute("messages")
@@ -27,7 +27,7 @@ class _Speaking(ApiBase):
                 llm_response += content
                 yield content
         
-        llm_dict = message_format("llm", llm_response)
+        llm_dict = message_format("assistant", llm_response)
         person_details.add_message(llm_dict)
         Neo4j.add_message_to_person(person_details)
 
