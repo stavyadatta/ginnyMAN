@@ -76,3 +76,5 @@ VENV/
 node_modules/
 *.lock
 
+# ignore the pt weights 
+*.pt
