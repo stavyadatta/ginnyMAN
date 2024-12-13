@@ -1,16 +1,18 @@
 import qi
+import cv2
 import io
 import sys
 import grpc
 import time
 import argparse
+import numpy as np
 from PIL import Image
 from io import BytesIO
 from threading import Thread
 from google.protobuf.empty_pb2 import Empty
 
 
-from grpc_communication.grpc_pb2 import ImageRequest, AudioRequest
+from grpc_communication.grpc_pb2 import AudioImgRequest
 from grpc_communication.grpc_pb2_grpc import MediaServiceStub
 from pepper_api import CameraManager, AudioManager2, HeadManager, EyeLEDManager, \
     SpeechManager, SpeechProcessor
@@ -83,20 +85,49 @@ class Pepper():
                 print("some error")
             
 
+    def make_img_compatible(self):
+        raw_image = self.get_image()
+
+        # Extract image dimensions and raw bytes
+        image_width = raw_image[0]
+        image_height = raw_image[1]
+        pil_image = Image.frombytes(
+            "RGB", (image_width, image_height), bytes(raw_image[6])
+        )
+        pil_image.save("image_pil_format.jpg")
+        # Convert the PIL image to a NumPy array
+        numpy_image = np.array(pil_image)
+
+        # Convert the image from RGB (PIL) to BGR (OpenCV format)
+        cv2_image = numpy_image[:, :, ::-1]  # Reverse the color channels
+        cv2_image = cv2.flip(cv2_image, 0)
+        cv2.imwrite("image_cv2_format.jpg", cv2_image)
+
+        # Return the OpenCV-compatible NumPy array
+        return cv2_image
+
     def send_audio(self):
         audio_data, sample_rate = self.get_audio()
+        last_frame = self.make_img_compatible()
+        height, width, _ = last_frame.shape
+        _, image_data = cv2.imencode(".jpg", last_frame)
 
-        request = AudioRequest(
+        request = AudioImgRequest(
             audio_data=audio_data,
             sample_rate=sample_rate,
             num_channels=1,  # Assuming mono audio
-            encoding="PCM_16",
-            description="Audio captured by Pepper"
+            audio_encoding="PCM_16",
+            audio_description="Audio captured by Pepper",
+            image_data=image_data.tobytes(),
+            image_format="JPEG",
+            image_width=width,
+            image_height=height,
+            image_description="Captured Pepper"
         )
 
         # Send the request to the gRPC server
         try:
-            response = self.stub.SendAudio(request)
+            response = self.stub.SendAudioImg(request)
         except grpc.RpcError as e:
             print("gRPC in sending audio error: {} - " \
             "{}".format(e.code(), e.details()))

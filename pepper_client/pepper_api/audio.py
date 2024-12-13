@@ -38,7 +38,7 @@ class AudioManager2(object):
         and stop when it's below the threshold for 10 consecutive loops.
         """
         energy_threshold = 450
-        max_below_thresh_loops = 10  # Stop recording after 10 loops below threshold
+        max_below_thresh_loops = 20  # Stop recording after 10 loops below threshold
 
 
         # Get the front mic energy
