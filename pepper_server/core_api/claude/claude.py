@@ -78,6 +78,17 @@ class _ClaudeImageProcessor:
         }
         return [last_dict]
     
+    def process_text(self, total_prompt,system_prompt, max_tokens=1000, stream=False):
+        response = self.client.messages.create(
+            model=self.model_name,
+            max_tokens=max_tokens,
+            system=system_prompt,
+            messages=total_prompt,
+            stream=stream
+        ) 
+        return response
+
+
     def process_image_and_text(self, image, person_details: PersonDetails, max_tokens=1000):
         """
         Process an image and text prompt using Claude API with streaming.

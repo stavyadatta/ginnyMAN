@@ -25,7 +25,7 @@ class _FaceRecognition:
     def __init__(self, 
                  db_dir: str = "/workspace/database/face_db",
                  model_name: str = "buffalo_l",
-                 recognition_threshold: float = 0.3):
+                 recognition_threshold: float = 0.4):
         """
         Initialize the FaceRecognition class.
 
