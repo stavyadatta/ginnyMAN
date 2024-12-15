@@ -1,14 +1,20 @@
 import grpc
 import wave
 import cv2
-import time
 import sys
 import io
+import logging
 import numpy as np
 import pyaudio
+from threading import Thread
 from google.protobuf.empty_pb2 import Empty
+
 from grpc_communication.grpc_pb2 import AudioImgRequest
 from grpc_communication.grpc_pb2_grpc import MediaServiceStub
+
+# Configure logger
+logging.basicConfig(filename="app.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 THRESHOLD = 55000
 SILENCE_FRAMES = 10
@@ -21,13 +27,13 @@ def wait_for_speech_start(stream):
     Wait until the user starts speaking (energy > THRESHOLD).
     Returns True when speech detected.
     """
-    print("Waiting for speech...")
+    logger.info("Waiting for speech...")
     while True:
         data = stream.read(CHUNK)
         audio_samples = np.frombuffer(data, dtype=np.int16)
         energy = np.sum(audio_samples.astype(np.int32) ** 2) / len(audio_samples)
         if energy > THRESHOLD:
-            print("Speech detected, starting recording...")
+            logger.info("Speech detected, starting recording...")
             return [data]  # Return the first chunk of speech data
 
 def record_until_silence():
@@ -58,9 +64,9 @@ def record_until_silence():
             silent_count += 1
         else:
             silent_count = 0
-        
+
         if silent_count >= SILENCE_FRAMES:
-            print("Silence detected. Stopping recording.")
+            logger.info("Silence detected. Stopping recording.")
             break
 
     stream.stop_stream()
@@ -79,12 +85,6 @@ def convert_pcm_to_wav_bytes(pcm_data, sample_rate, num_channels, sample_width=2
     wf.setsampwidth(sample_width)  # 2 bytes (16-bit)
     wf.setframerate(sample_rate)
     wf.writeframes(pcm_data)
-    # with wave.open(wav_buffer, 'wb') as wf:
-    #     wf.setnchannels(num_channels)
-    #     wf.setsampwidth(sample_width)  # 2 bytes (16-bit)
-    #     wf.setframerate(sample_rate)
-    #     wf.writeframes(pcm_data)
-    
     wf.close()
     return wav_buffer.getvalue()
 
@@ -94,6 +94,7 @@ def capture_webcam_image():
     """
     cap = cv2.VideoCapture(0)  # Open default camera
     if not cap.isOpened():
+        logger.error("Could not open webcam")
         raise Exception("Could not open webcam")
     contador = 0
     while True:
@@ -103,6 +104,7 @@ def capture_webcam_image():
         contador += 1
     cap.release()
     if not ret:
+        logger.error("Failed to capture image from webcam")
         raise Exception("Failed to capture image from webcam")
 
     return frame
@@ -118,7 +120,7 @@ def send_audio_image_to_grpc(audio_wav_data, sample_rate, num_channels, last_fra
         audio_encoding = "PCM_16"
 
         # Create AudioImgRequest message
-        print("Is the error here? like starting")
+        logger.debug("Creating AudioImgRequest...")
         request = AudioImgRequest(
             audio_data=audio_wav_data,
             sample_rate=sample_rate,
@@ -133,27 +135,28 @@ def send_audio_image_to_grpc(audio_wav_data, sample_rate, num_channels, last_fra
         )
 
         # Call the gRPC method
+        logger.info("Sending data to gRPC server...")
         response = stub.SendAudioImg(request)
-        print("Is the error here? like ending")
-        print("SendAudioImg response: {} - {}".format(response.status, response.message))
+        logger.info("SendAudioImg response: {} - {}".format(response.status, response.message))
     except Exception as e:
-        print("Error: Failed to send media via gRPC. Error: {}".format(e))
+        logger.error("Error: Failed to send media via gRPC. Error: %s", e)
 
 def receive_llm_response(stub):
     """Receive streamed LLM response from the gRPC server."""
     request = Empty()
     try:
         response_stream = stub.LLmResponse(request)
-        print("Receiving streamed text chunks:")
+        logger.info("Receiving streamed text chunks:")
         for chunk in response_stream:
             sys.stdout.write(chunk.text)
             sys.stdout.flush()
             if chunk.is_final:
+                logger.info("Final chunk received")
                 sys.stdout.write("\n[Final chunk received]\n")
                 sys.stdout.flush()
                 break
     except grpc.RpcError as e:
-        print("gRPC error: {} - {}".format(e.code(), e.details()))
+        logger.error("gRPC error: %s - %s", e.code(), e.details())
 
 if __name__ == "__main__":
     # Set up gRPC channel and stub
@@ -177,7 +180,7 @@ if __name__ == "__main__":
             # Receive LLM response
             receive_llm_response(stub)
 
-            print("Finished one cycle. Waiting for next speech...")
+            logger.info("Finished one cycle. Waiting for next speech...")
     except KeyboardInterrupt:
-        print("\nShutting down... Goodbye!")
+        logger.info("\nShutting down... Goodbye!")
 
