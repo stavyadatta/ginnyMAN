@@ -1,4 +1,5 @@
 import traceback
+from typing import Optional
 
 from utils import Neo4j, PersonDetails, message_format
 from core_api import Llama
@@ -11,17 +12,29 @@ class _Reasoner:
         """
         pass
 
+    def to_lowercase(self, input_string):
+        """
+        Converts all characters in the input string to lowercase.
+
+        Parameters:
+            input_string (str): The string to convert.
+
+        Returns:
+            str: The input string in lowercase.
+        """
+        return input_string.lower()
+
     def _developing_reasoning_prompt(self):
         system_reasoner = """
         You are an agent programmed to respond strictly according to the following rules:
 
-        1. If the user explicitly asks you to "speak," you must respond with "speak"
+        1. If the user explicitly asks you to "speak," or "talk," you must respond with "speak"
         2. If the user explicitly asks you to "be silent," you must respond with "silent"
         3. If the user asks something that would require vision to answer (e.g., "what's in my hand," "how do you think I look"), you must respond with "vision"
-        4. If the user gives no input or provides very small or meaningless input, respond with "bad input"
+        4. If the user gives no input or provides meaningless input, respond with "bad input"
         5. For any other input or scenario, respond with "no change"
 
-        You must not deviate from these rules or provide any additional explanation or context in your responses.
+        You must not deviate from these rules or provide any additional explanation or context in your responses. You must stick to above responses as commanded
         This is a strict instruction.
         """
         # system_reasoner = """
@@ -43,7 +56,7 @@ class _Reasoner:
         user_prompt = message_format("user", text)
         return [user_prompt]
 
-    def __call__(self, transcription, face_id: str, img=None) -> PersonDetails:
+    def __call__(self, transcription, face_id: Optional[str], img=None) -> PersonDetails:
         """
             Running the reasoner and deciding on what APIs need to be run 
             with the reasoner program
@@ -51,6 +64,10 @@ class _Reasoner:
             :param face_id: To identify faces for doing an action
             :param img: for the VLM to get more context
         """
+        if face_id is None:
+            return PersonDetails({
+                "state": "bad input" 
+            })
         try:
             system_prompt = self._developing_reasoning_prompt()
             person_details = Neo4j.get_person_details(face_id)

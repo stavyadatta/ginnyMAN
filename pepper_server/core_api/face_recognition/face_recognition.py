@@ -1,10 +1,11 @@
-import os
 import cv2
 import glob
 import torch
+import logging
 import numpy as np
-from typing import List, Tuple
 from pathlib import Path
+from collections import deque
+from typing import List, Tuple
 from insightface.app import FaceAnalysis
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -49,7 +50,7 @@ class _FaceRecognition:
         # Load database embeddings
         self.known_ids, self.known_embeddings = self._load_database()
 
-    def __call__(self, img: np.ndarray) -> str:
+    def single_img(self, img: np.ndarray) -> str:
         """
         Recognize the face in the given image (as a numpy array).
 
@@ -72,6 +73,30 @@ class _FaceRecognition:
             face_id = self._save_new_face(embedding, img, save_img=True)
 
         return face_id
+
+    def get_most_frequent_face_id(self, image_queue: deque):
+        if len(image_queue) == 0:
+            logging.warning("No image queue")
+            raise Exception("There are no images in the image queue")
+        
+        recent_images = list(image_queue)[-10:]
+        face_ids = []
+
+        for image in recent_images:
+            try:
+                face_id = self.single_img(image)
+                face_ids.append(face_id)
+            except ValueError as e:
+                logging.warning("No face found in one of the images ", e)
+
+        if face_ids:
+            most_frequent_id = max(set(face_ids), key=face_ids.count)
+            logging.info(f"The most frequent id is {most_frequent_id}")
+            return most_frequent_id
+        else:
+            logging.info("No face detected in the last 10 images")
+            return None
+        
 
     def _ensure_db_directory(self):
         """
@@ -160,6 +185,7 @@ class _FaceRecognition:
         if best_score >= (1 - self.recognition_threshold):
             return self.known_ids[best_match_idx]
         else:
+            print("Did not match score of ", best_score)
             return None
 
     def _save_new_face(self, embedding: np.ndarray, img: np.ndarray, save_img=False) -> str:

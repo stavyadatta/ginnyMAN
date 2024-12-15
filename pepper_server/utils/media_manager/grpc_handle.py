@@ -4,16 +4,18 @@ import time
 import wave
 import traceback
 import numpy as np
+from google.protobuf.empty_pb2 import Empty
 
 from grpc_pb2 import AudioImgResponse, TextChunk
 from grpc_pb2_grpc import MediaServiceServicer
 
 class MediaManager(MediaServiceServicer):
-    def __init__(self, audio_img_queue, llama_response_queue, audio_save=False):
+    def __init__(self, audio_img_queue, llama_response_queue, image_queue, audio_save=False):
         super().__init__()
         self.audio_img_queue = audio_img_queue
         self.audio_save = audio_save
         self.llama_response_queue = llama_response_queue
+        self.image_queue = image_queue
 
         if self.audio_save:
             self.save_directory = "./recordings_stavya/"
@@ -117,3 +119,19 @@ class MediaManager(MediaServiceServicer):
         except Exception as e:
             print(f"Error in the LLmResponse: {e}")
             yield TextChunk(text="Error, no text received", is_final=True)
+
+
+    def StreamImages(self, request_iterator, context):
+        """
+            Handle the image streaming requests from the client
+        """
+        try:
+            for request in request_iterator:
+                image = self._decode_image_from_bytes(request.image_data)
+                if image is not None:
+                    # Add image to the queue
+                    self.image_queue.append(image)
+        except Exception as e:
+            traceback.print_exc()
+        return Empty()
+
