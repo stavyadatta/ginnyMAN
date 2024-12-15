@@ -9,12 +9,14 @@ import pyaudio
 from threading import Thread
 from google.protobuf.empty_pb2 import Empty
 
-from grpc_communication.grpc_pb2 import AudioImgRequest
+from grpc_communication.grpc_pb2 import AudioImgRequest, ImageStreamRequest
 from grpc_communication.grpc_pb2_grpc import MediaServiceStub
 
 # Configure logger
 logging.basicConfig(filename="app.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+static_img = None
 
 THRESHOLD = 55000
 SILENCE_FRAMES = 10
@@ -88,26 +90,25 @@ def convert_pcm_to_wav_bytes(pcm_data, sample_rate, num_channels, sample_width=2
     wf.close()
     return wav_buffer.getvalue()
 
-def capture_webcam_image():
+def capture_webcam_image(cap):
     """
     Capture a single frame from the webcam.
     """
-    cap = cv2.VideoCapture(0)  # Open default camera
-    if not cap.isOpened():
-        logger.error("Could not open webcam")
-        raise Exception("Could not open webcam")
-    contador = 0
-    while True:
-        if contador == 50000:
-            ret, frame = cap.read()
-            break
-        contador += 1
-    cap.release()
-    if not ret:
-        logger.error("Failed to capture image from webcam")
-        raise Exception("Failed to capture image from webcam")
+    # if not cap.isOpened():
+    #     logger.error("Could not open webcam")
+    #     raise Exception("Could not open webcam")
+    # contador = 0
+    # while True:
+    #     if contador == 50000:
+    #         ret, frame = cap.read()
+    #         break
+    #     contador += 1
+    # if not ret:
+    #     logger.error("Failed to capture image from webcam")
+    #     raise Exception("Failed to capture image from webcam")
 
-    return frame
+    global static_img
+    return static_img
 
 def send_audio_image_to_grpc(audio_wav_data, sample_rate, num_channels, last_frame, stub):
     """Send the audio and image to the gRPC server."""
@@ -158,10 +159,54 @@ def receive_llm_response(stub):
     except grpc.RpcError as e:
         logger.error("gRPC error: %s - %s", e.code(), e.details())
 
+def capture_and_stream_images(stub, cap):
+    """ 
+        Continuously capture the images form the webcam and send them to the gRPC 
+        server
+    """
+    if not cap.isOpened():
+        logger.error("Could not open webcam")
+        raise Exception("Could not open webcam")
+
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                logger.error("Failed to capture image")
+                continue
+
+            global static_img
+            static_img = frame
+            _, image_data = cv2.imencode('.jpg', frame)
+            height, width, _ = frame.shape
+
+            request = ImageStreamRequest(
+                image_data=image_data.tobytes(),
+                image_format="JPEG",
+                image_width=width,
+                image_height=height,
+                image_description="Captured webcam image"
+            )
+
+            # Send the image stream request
+            try:
+                stub.StreamImages(iter([request]))
+            except grpc.RpcError as e:
+                logger.error(f"Failed to stream image: {e.details()}")
+
+    except KeyboardInterrupt:
+        logger.info("Stopping image streaming...")
+    finally:
+        cap.release()
+
 if __name__ == "__main__":
     # Set up gRPC channel and stub
     channel = grpc.insecure_channel("172.27.72.27:50051")
     stub = MediaServiceStub(channel)
+    cap = cv2.VideoCapture(2)  # Open the default camera
+
+    image_thread = Thread(target=capture_and_stream_images, args=(stub, cap, ), daemon=True)
+    image_thread.start()
 
     try:
         while True:
@@ -172,7 +217,7 @@ if __name__ == "__main__":
             audio_wav_data = convert_pcm_to_wav_bytes(pcm_data, RATE, CHANNELS)
 
             # Capture image from webcam
-            last_frame = capture_webcam_image()
+            last_frame = capture_webcam_image(cap)
 
             # Send data to gRPC pipeline
             send_audio_image_to_grpc(audio_wav_data, RATE, CHANNELS, last_frame, stub)
@@ -183,4 +228,5 @@ if __name__ == "__main__":
             logger.info("Finished one cycle. Waiting for next speech...")
     except KeyboardInterrupt:
         logger.info("\nShutting down... Goodbye!")
+        image_thread.join()
 
