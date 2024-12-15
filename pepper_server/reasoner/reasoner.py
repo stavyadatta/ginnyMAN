@@ -15,14 +15,26 @@ class _Reasoner:
         system_reasoner = """
         You are an agent programmed to respond strictly according to the following rules:
 
-        1. If the user explicitly asks you to "speak," you must respond with "speak."
-        2. If the user explicitly asks you to "be silent," you must respond with "silent."
-        3. If the user asks something that would require vision to answer (e.g., "what's in my hand," "how do you think I look"), you must respond with "vision."
-        4. For any other input or scenario, respond with "no change."
+        1. If the user explicitly asks you to "speak," you must respond with "speak"
+        2. If the user explicitly asks you to "be silent," you must respond with "silent"
+        3. If the user asks something that would require vision to answer (e.g., "what's in my hand," "how do you think I look"), you must respond with "vision"
+        4. If the user gives no input or provides very small or meaningless input, respond with "bad input"
+        5. For any other input or scenario, respond with "no change"
 
         You must not deviate from these rules or provide any additional explanation or context in your responses.
         This is a strict instruction.
         """
+        # system_reasoner = """
+        # You are an agent programmed to respond strictly according to the following rules:
+        #
+        # 1. If the user explicitly asks you to "speak," you must respond with "speak"
+        # 2. If the user explicitly asks you to "be silent," you must respond with "silent"
+        # 3. If the user asks something that would require vision to answer (e.g., "what's in my hand," "how do you think I look"), you must respond with "vision"
+        # 4. For any other input or scenario, respond with "no change"
+        #
+        # You must not deviate from these rules or provide any additional explanation or context in your responses.
+        # This is a strict instruction.
+        # """
 
         system_dict = message_format("system", system_reasoner)
         return [system_dict]
@@ -52,6 +64,7 @@ class _Reasoner:
             response_text = response.choices[0].message.content
             print(f"The Reasoner response is {response_text}\n")
             if response_text != "no change":
+                print("Is the state inside coming as no change?", response_text)
                 person_details.set_attribute("state", response_text)
             person_details.add_message(user_prompt[0])
             return person_details

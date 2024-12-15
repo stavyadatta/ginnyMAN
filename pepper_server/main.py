@@ -27,8 +27,13 @@ def process_audio(audio_img_queue: queue.Queue,
         try:
             # Transcribe the audio
             transcription = WhisperSpeech2Text(audio_img_item)
-            if len(transcription) < 2:
-                continue
+            # if len(transcription) < 2:
+            #     print("Coming in the less than 2 if statement")
+            #     llama_response_queue.put({
+            #         'text': '',
+            #         'is_final': True
+            #     })
+            #     break
             print(f"Transcription: {transcription}")
 
             # Get the face information 

@@ -116,3 +116,4 @@ class MediaManager(MediaServiceServicer):
                     break
         except Exception as e:
             print(f"Error in the LLmResponse: {e}")
+            yield TextChunk(text="Error, no text received", is_final=True)
