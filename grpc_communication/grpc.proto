@@ -8,6 +8,9 @@ service MediaService {
 
     // New RPC method to send audio data and stream text response
     rpc LLmResponse(google.protobuf.Empty) returns (stream TextChunk);
+
+    // RPC method to handle image streams
+    rpc StreamImages(stream ImageStreamRequest) returns (google.protobuf.Empty);
 }
 
 // Message for sending both image and audio data
@@ -35,4 +38,13 @@ message AudioImgResponse {
 message TextChunk {
     string text = 1;              // Chunk of transcribed/generated text
     bool is_final = 2;            // Indicates if this is the final chunk
+}
+
+// Message for streaming images
+message ImageStreamRequest {
+    bytes image_data = 1;          // Raw image bytes
+    string image_format = 2;      // Image format (e.g., "JPEG", "PNG")
+    int32 image_width = 3;        // Image width in pixels
+    int32 image_height = 4;       // Image height in pixels
+    string image_description = 5; // Optional description for the image
 }
