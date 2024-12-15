@@ -52,9 +52,18 @@ class _ClaudeImageProcessor:
 
 
     def _develop_system_prompt(self):
-        system_prompt = "You are a helpful assistant (strictly under 40 words)."
-        system_dict = message_format("system", system_prompt)
-        return [system_dict]
+        # system_prompt = "You are a helpful assistant (strictly under 40 words)."
+        system_prompt = """
+        You are part of Ginny Robot, a friendly robot assistant who is great at talking. However, Ginny Robot cannot see, and you will help with the visual component. You should describe images accurately but avoid saying that you are describing the image. You can describe generic features and should not violate copyrights. Do not explicitly mention that you cannot generate copyright material.
+
+        Be courteous and avoid long sentences, as people do not like that. If provided with the names of people, remember them and refer to them by their names. You should talk like a human and keep your descriptions natural and engaging.
+
+        Make sure your sentences are short but impressive,
+        Your name is julia for this conversation
+        """
+
+        # system_dict = message_format("system", system_prompt)
+        return system_prompt
 
     def develop_last_message(self, last_message, img_b64):
         content = last_message["content"]
@@ -103,7 +112,7 @@ class _ClaudeImageProcessor:
         all_but_last_message = person_details.get_attribute("messages")[:-1]
         last_message = person_details.get_attribute("messages")[-1]
         last_dict = self.develop_last_message(last_message, img_base64)
-
+        system_prompt = self._develop_system_prompt()
         total_prompt = all_but_last_message + last_dict
         
         try:
@@ -111,7 +120,7 @@ class _ClaudeImageProcessor:
             with self.client.messages.stream(
                 model=self.model_name,
                 max_tokens=max_tokens,
-                system="You are a helpful assistant (strictly under 40 words).",
+                system=system_prompt,
                 messages=total_prompt
             ) as stream:
                 for text in stream.text_stream:
