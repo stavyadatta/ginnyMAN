@@ -11,6 +11,9 @@ service MediaService {
 
     // RPC method to handle image streams
     rpc StreamImages(stream ImageStreamRequest) returns (google.protobuf.Empty);
+
+    // RPC method to get stream of face detections streams
+    rpc StreamBbox(google.protobuf.Empty) returns (stream FaceBoundingBox);
 }
 
 // Message for sending both image and audio data
@@ -47,4 +50,12 @@ message ImageStreamRequest {
     int32 image_width = 3;        // Image width in pixels
     int32 image_height = 4;       // Image height in pixels
     string image_description = 5; // Optional description for the image
+}
+
+// Message representing a bounding box with four integer coordinates
+message FaceBoundingBox {
+  int32 x1 = 1; // Top-left x-coordinate
+  int32 y1 = 2; // Top-left y-coordinate
+  int32 x2 = 3; // Bottom-right x-coordinate
+  int32 y2 = 4; // Bottom-right y-coordinate
 }
