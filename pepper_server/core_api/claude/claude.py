@@ -6,7 +6,6 @@ import numpy as np
 import cv2
 from PIL import Image
 
-from utils import PersonDetails, message_format
 
 class _ClaudeImageProcessor:
     def __init__(self, model_name="claude-3-sonnet-20240229"):
@@ -98,7 +97,7 @@ class _ClaudeImageProcessor:
         return response
 
 
-    def process_image_and_text(self, image, person_details: PersonDetails, max_tokens=1000):
+    def process_image_and_text(self, image, person_details, max_tokens=1000):
         """
         Process an image and text prompt using Claude API with streaming.
         

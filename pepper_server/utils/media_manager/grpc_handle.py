@@ -144,7 +144,12 @@ class MediaManager(MediaServiceServicer):
             returns the FaceBoundingBox
         """
         if not self.image_queue:
-            return
+            return FaceBoundingBox(
+                x1=0,
+                y1=0,
+                x2=0,
+                y2=0
+            )
 
         if len(self.image_queue) < IMAGE_QUEUE_LEN:
             return FaceBoundingBox(
@@ -153,7 +158,7 @@ class MediaManager(MediaServiceServicer):
                 x2=0,
                 y2=0
             )
-        earliest_image = self.image_queue[0]
+        earliest_image = self.image_queue[-1]
 
         bbox = FaceRecognition.get_face_box(earliest_image)
         if bbox is None:

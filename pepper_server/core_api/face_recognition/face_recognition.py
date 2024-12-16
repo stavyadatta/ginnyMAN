@@ -62,7 +62,7 @@ class _FaceRecognition:
         """
         bboxes, _ = self.app.det_model.detect(img, max_num=0, metric='default')
         if bboxes.shape[0] == 0:
-            logging.warning("No image found")
+            # logging.warning("No person found")
             return None
 
         first_bbox = bboxes[0, 0:4].astype(int)
