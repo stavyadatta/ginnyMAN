@@ -43,7 +43,7 @@ class HeadManager:
         # HeadPitch = vertical rotation
         self.motion_service.setAngles(["HeadYaw", "HeadPitch"], [left,forward], speed)
 
-    def rotate_head(self, forward=0, left=0, speed=0.2):
+    def rotate_head(self, forward=0.0, left=0.0, speed=0.2):
         """ Rotates Pepper's head relative to current head position
         Params:
             forward: float

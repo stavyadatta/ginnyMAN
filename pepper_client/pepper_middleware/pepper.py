@@ -1,7 +1,9 @@
 import qi
 import cv2
+import traceback
 import io
 import sys
+import logging
 import grpc
 import time
 import argparse
@@ -12,11 +14,13 @@ from threading import Thread
 from google.protobuf.empty_pb2 import Empty
 
 
-from grpc_communication.grpc_pb2 import AudioImgRequest
+from grpc_communication.grpc_pb2 import AudioImgRequest, ImageStreamRequest
 from grpc_communication.grpc_pb2_grpc import MediaServiceStub
 from pepper_api import CameraManager, AudioManager2, HeadManager, EyeLEDManager, \
     SpeechManager, SpeechProcessor
 
+logging.basicConfig(filename="app.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 class Pepper():
     def __init__(self, pepper_connection_url, stub):
@@ -101,10 +105,82 @@ class Pepper():
         # Convert the image from RGB (PIL) to BGR (OpenCV format)
         cv2_image = numpy_image[:, :, ::-1]  # Reverse the color channels
         cv2_image = cv2.flip(cv2_image, 0)
-        cv2.imwrite("image_cv2_format.jpg", cv2_image)
+        # cv2.imwrite("image_cv2_format.jpg", cv2_image)
 
         # Return the OpenCV-compatible NumPy array
         return cv2_image
+    
+    def center_head(self):
+        pass
+
+    def capture_and_stream_images(self):
+        try:
+            while True:
+                cv2_image = self.make_img_compatible()
+                height, width, _ = cv2_image.shape
+                _, image_data = cv2.imencode(".jpg", cv2_image)
+
+                request = ImageStreamRequest(
+                    image_data=image_data.tobytes(),
+                    image_format="JPEG",
+                    image_width=width,
+                    image_height=height,
+                    image_description="Captured pepper image"
+                )
+
+                # Send the image stream request
+                try:
+                    self.stub.StreamImages(iter([request]))
+                except grpc.RpcError as e:
+                    logger.error("Failed to stream image: {}".format(e.details()))
+        except KeyboardInterrupt:
+            logger.info("Stopping image streaming...")
+            raise KeyboardInterrupt()
+
+    def get_vertical_and_horizontal_axis(self, box, img_shape, stop_threshold=0.5, vertical_offset=0.5):
+        box_center = np.array([box[2] / 2 + box[0] / 2, box[1] * (1 - vertical_offset) + box[3] * vertical_offset])
+        frame_center = np.array((img_shape[1] / 2, img_shape[0] / 2))
+        diff = frame_center - box_center
+        horizontal_ratio = diff[0] / img_shape[1]
+        vertical_ratio = diff[1] / img_shape[0]
+
+        if abs(horizontal_ratio) <= stop_threshold and abs(vertical_ratio) <= vertical_offset:
+            return (-vertical_ratio * 0.4, horizontal_ratio * 0.6)
+        else:
+            return (0, 0)
+
+    def is_zero_list(self, box):
+        for i in box:
+            if i == 0:
+                return True
+        return False
+
+    def head_management(self):
+        try:
+            cv2_image = self.make_img_compatible()
+            img_shape = cv2_image.shape
+            request = Empty()
+            person_missing = 0
+            while True:
+                time.sleep(1)
+                bbox = self.stub.GetBbox(request)
+                box = [bbox.x1, bbox.y1, bbox.x2, bbox.y2]
+                if not self.is_zero_list(box):
+                    person_missing += 1
+                    vertical_ratio, horizontal_ratio = self.get_vertical_and_horizontal_axis(box, img_shape)
+
+                    self.head_manager.rotate_head(forward=float(vertical_ratio), left=float(horizontal_ratio))
+                elif self.is_zero_list(box) and person_missing > 30:
+                    person_missing = 0
+                    self.head_manager.rotate_head_abs()
+        except KeyboardInterrupt:
+            logger.info("Stopping the head management")
+            raise KeyboardInterrupt
+
+        except Exception as e:
+            print("Some error in head_management, donot know ", e)
+            traceback.print_exc()
+
 
     def send_audio(self):
         audio_data, sample_rate = self.get_audio()
@@ -178,14 +254,25 @@ if __name__ == "__main__":
     
     channel = grpc.insecure_channel("172.27.72.27:50051")
     stub = MediaServiceStub(channel)
-    
+
     p = Pepper(pepper_connection_url, stub)
+    image_thread = Thread(target=p.capture_and_stream_images, args=()) 
+    image_thread.daemon = True
+    image_thread.start()
+
+    head_thread = Thread(target=p.head_management, args=())
+    head_thread.daemon = True
+    head_thread.start()
+    
     try:
         while True:
             p.send_audio()
             p.receive_llm_response()
     except KeyboardInterrupt:
         print("Program interrupted by user.")
+        image_thread.join()
+        head_thread.join()
+        p.close()
     finally:
         # Ensure resources are cleaned up
         p.close()

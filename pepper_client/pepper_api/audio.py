@@ -23,6 +23,7 @@ class AudioManager2(object):
 
     def init_service(self, session):
         self.audio_service = session.service("ALAudioDevice")
+        self.audio_service.setOutputVolume(30)
         self.audio_service.enableEnergyComputation()
 
     def calculate_rms_energy(self, audio_data):
