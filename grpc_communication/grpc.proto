@@ -41,6 +41,7 @@ message AudioImgResponse {
 message TextChunk {
     string text = 1;              // Chunk of transcribed/generated text
     bool is_final = 2;            // Indicates if this is the final chunk
+    bool movement = 3;
 }
 
 // Message for streaming images
