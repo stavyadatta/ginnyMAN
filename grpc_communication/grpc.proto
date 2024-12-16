@@ -12,8 +12,8 @@ service MediaService {
     // RPC method to handle image streams
     rpc StreamImages(stream ImageStreamRequest) returns (google.protobuf.Empty);
 
-    // RPC method to get stream of face detections streams
-    rpc StreamBbox(google.protobuf.Empty) returns (stream FaceBoundingBox);
+    // RPC method to get face detections bboxes
+    rpc GetBbox(google.protobuf.Empty) returns (FaceBoundingBox);
 }
 
 // Message for sending both image and audio data

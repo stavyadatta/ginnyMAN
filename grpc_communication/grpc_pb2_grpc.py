@@ -30,8 +30,8 @@ class MediaServiceStub(object):
                 request_serializer=grpc__pb2.ImageStreamRequest.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
-        self.StreamBbox = channel.unary_stream(
-                '/MediaService/StreamBbox',
+        self.GetBbox = channel.unary_unary(
+                '/MediaService/GetBbox',
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
                 response_deserializer=grpc__pb2.FaceBoundingBox.FromString,
                 )
@@ -61,8 +61,8 @@ class MediaServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def StreamBbox(self, request, context):
-        """RPC method to get stream of face detections streams
+    def GetBbox(self, request, context):
+        """RPC method to get face detections bboxes
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -86,8 +86,8 @@ def add_MediaServiceServicer_to_server(servicer, server):
                     request_deserializer=grpc__pb2.ImageStreamRequest.FromString,
                     response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
-            'StreamBbox': grpc.unary_stream_rpc_method_handler(
-                    servicer.StreamBbox,
+            'GetBbox': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetBbox,
                     request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                     response_serializer=grpc__pb2.FaceBoundingBox.SerializeToString,
             ),
@@ -153,7 +153,7 @@ class MediaService(object):
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
-    def StreamBbox(request,
+    def GetBbox(request,
             target,
             options=(),
             channel_credentials=None,
@@ -163,7 +163,7 @@ class MediaService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/MediaService/StreamBbox',
+        return grpc.experimental.unary_unary(request, target, '/MediaService/GetBbox',
             google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             grpc__pb2.FaceBoundingBox.FromString,
             options, channel_credentials,
