@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\ngrpc.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xf3\x01\n\x0f\x41udioImgRequest\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x13\n\x0bsample_rate\x18\x02 \x01(\x05\x12\x14\n\x0cnum_channels\x18\x03 \x01(\x05\x12\x16\n\x0e\x61udio_encoding\x18\x04 \x01(\t\x12\x19\n\x11\x61udio_description\x18\x05 \x01(\t\x12\x12\n\nimage_data\x18\x06 \x01(\x0c\x12\x14\n\x0cimage_format\x18\x07 \x01(\t\x12\x13\n\x0bimage_width\x18\x08 \x01(\x05\x12\x14\n\x0cimage_height\x18\t \x01(\x05\x12\x19\n\x11image_description\x18\n \x01(\t\"3\n\x10\x41udioImgResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\"+\n\tTextChunk\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x10\n\x08is_final\x18\x02 \x01(\x08\"\x84\x01\n\x12ImageStreamRequest\x12\x12\n\nimage_data\x18\x01 \x01(\x0c\x12\x14\n\x0cimage_format\x18\x02 \x01(\t\x12\x13\n\x0bimage_width\x18\x03 \x01(\x05\x12\x14\n\x0cimage_height\x18\x04 \x01(\x05\x12\x19\n\x11image_description\x18\x05 \x01(\t\"A\n\x0f\x46\x61\x63\x65\x42oundingBox\x12\n\n\x02x1\x18\x01 \x01(\x05\x12\n\n\x02y1\x18\x02 \x01(\x05\x12\n\n\x02x2\x18\x03 \x01(\x05\x12\n\n\x02y2\x18\x04 \x01(\x05\x32\xec\x01\n\x0cMediaService\x12\x33\n\x0cSendAudioImg\x12\x10.AudioImgRequest\x1a\x11.AudioImgResponse\x12\x33\n\x0bLLmResponse\x12\x16.google.protobuf.Empty\x1a\n.TextChunk0\x01\x12=\n\x0cStreamImages\x12\x13.ImageStreamRequest\x1a\x16.google.protobuf.Empty(\x01\x12\x33\n\x07GetBbox\x12\x16.google.protobuf.Empty\x1a\x10.FaceBoundingBoxb\x06proto3'
+  serialized_pb=b'\n\ngrpc.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xf3\x01\n\x0f\x41udioImgRequest\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x13\n\x0bsample_rate\x18\x02 \x01(\x05\x12\x14\n\x0cnum_channels\x18\x03 \x01(\x05\x12\x16\n\x0e\x61udio_encoding\x18\x04 \x01(\t\x12\x19\n\x11\x61udio_description\x18\x05 \x01(\t\x12\x12\n\nimage_data\x18\x06 \x01(\x0c\x12\x14\n\x0cimage_format\x18\x07 \x01(\t\x12\x13\n\x0bimage_width\x18\x08 \x01(\x05\x12\x14\n\x0cimage_height\x18\t \x01(\x05\x12\x19\n\x11image_description\x18\n \x01(\t\"3\n\x10\x41udioImgResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\"=\n\tTextChunk\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x10\n\x08is_final\x18\x02 \x01(\x08\x12\x10\n\x08movement\x18\x03 \x01(\x08\"\x84\x01\n\x12ImageStreamRequest\x12\x12\n\nimage_data\x18\x01 \x01(\x0c\x12\x14\n\x0cimage_format\x18\x02 \x01(\t\x12\x13\n\x0bimage_width\x18\x03 \x01(\x05\x12\x14\n\x0cimage_height\x18\x04 \x01(\x05\x12\x19\n\x11image_description\x18\x05 \x01(\t\"A\n\x0f\x46\x61\x63\x65\x42oundingBox\x12\n\n\x02x1\x18\x01 \x01(\x05\x12\n\n\x02y1\x18\x02 \x01(\x05\x12\n\n\x02x2\x18\x03 \x01(\x05\x12\n\n\x02y2\x18\x04 \x01(\x05\x32\xec\x01\n\x0cMediaService\x12\x33\n\x0cSendAudioImg\x12\x10.AudioImgRequest\x1a\x11.AudioImgResponse\x12\x33\n\x0bLLmResponse\x12\x16.google.protobuf.Empty\x1a\n.TextChunk0\x01\x12=\n\x0cStreamImages\x12\x13.ImageStreamRequest\x1a\x16.google.protobuf.Empty(\x01\x12\x33\n\x07GetBbox\x12\x16.google.protobuf.Empty\x1a\x10.FaceBoundingBoxb\x06proto3'
   ,
   dependencies=[google_dot_protobuf_dot_empty__pb2.DESCRIPTOR,])
 
@@ -183,6 +183,13 @@ _TEXTCHUNK = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='movement', full_name='TextChunk.movement', index=2,
+      number=3, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -196,7 +203,7 @@ _TEXTCHUNK = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=342,
-  serialized_end=385,
+  serialized_end=403,
 )
 
 
@@ -255,8 +262,8 @@ _IMAGESTREAMREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=388,
-  serialized_end=520,
+  serialized_start=406,
+  serialized_end=538,
 )
 
 
@@ -308,8 +315,8 @@ _FACEBOUNDINGBOX = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=522,
-  serialized_end=587,
+  serialized_start=540,
+  serialized_end=605,
 )
 
 DESCRIPTOR.message_types_by_name['AudioImgRequest'] = _AUDIOIMGREQUEST
@@ -363,8 +370,8 @@ _MEDIASERVICE = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=590,
-  serialized_end=826,
+  serialized_start=608,
+  serialized_end=844,
   methods=[
   _descriptor.MethodDescriptor(
     name='SendAudioImg',
