@@ -6,14 +6,12 @@ from collections import deque
 from concurrent import futures
 from threading import Thread
 
-from utils import MediaManager
 from core_api import FaceRecognition, WhisperSpeech2Text
+from utils import MediaManager, IMAGE_QUEUE_LEN
 from executor import Executor
 from reasoner import Reasoner
 import grpc_communication.grpc_pb2 as pb2
 import grpc_communication.grpc_pb2_grpc as pb2_grpc
-
-IMAGE_QUEUE_LEN = 50
 
 def process_audio(audio_img_queue: queue.Queue, 
                   llama_response_queue: queue.Queue, 

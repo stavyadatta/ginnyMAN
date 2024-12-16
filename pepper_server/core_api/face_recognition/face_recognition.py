@@ -5,7 +5,7 @@ import logging
 import numpy as np
 from pathlib import Path
 from collections import deque
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from insightface.app import FaceAnalysis
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -26,7 +26,7 @@ class _FaceRecognition:
     def __init__(self, 
                  db_dir: str = "/workspace/database/face_db",
                  model_name: str = "buffalo_l",
-                 recognition_threshold: float = 0.4):
+                 recognition_threshold: float = 0.55):
         """
         Initialize the FaceRecognition class.
 
@@ -49,6 +49,24 @@ class _FaceRecognition:
 
         # Load database embeddings
         self.known_ids, self.known_embeddings = self._load_database()
+
+    def get_face_box(self, img: np.ndarray) -> Optional[Tuple[int, int, int, int]]:
+        """
+        Detect the face in the image and return the bounding box.
+
+        Args:
+            img (np.ndarray): The input image array (e.g., from cv2.imread).
+
+        Returns:
+            Optional[Tuple[int, int, int, int]]: Bounding box (x, y, w, h) if a face is detected, else None.
+        """
+        bboxes, _ = self.app.det_model.detect(img, max_num=0, metric='default')
+        if bboxes.shape[0] == 0:
+            logging.warning("No image found")
+            return None
+
+        first_bbox = bboxes[0, 0:4].astype(int)
+        return tuple(first_bbox)
 
     def single_img(self, img: np.ndarray) -> str:
         """

@@ -6,8 +6,11 @@ import traceback
 import numpy as np
 from google.protobuf.empty_pb2 import Empty
 
-from grpc_pb2 import AudioImgResponse, TextChunk
+from core_api import FaceRecognition
+from grpc_pb2 import AudioImgResponse, TextChunk, FaceBoundingBox
 from grpc_pb2_grpc import MediaServiceServicer
+
+IMAGE_QUEUE_LEN = 50
 
 class MediaManager(MediaServiceServicer):
     def __init__(self, audio_img_queue, llama_response_queue, image_queue, audio_save=False):
@@ -135,3 +138,33 @@ class MediaManager(MediaServiceServicer):
             traceback.print_exc()
         return Empty()
 
+    def GetBbox(self, request, context):
+        """
+            From the image queue runs a face detector, gets the first bbox and then 
+            returns the FaceBoundingBox
+        """
+        if not self.image_queue:
+            return
+
+        if len(self.image_queue) < IMAGE_QUEUE_LEN:
+            return FaceBoundingBox(
+                x1=0,
+                y1=0,
+                x2=0,
+                y2=0
+            )
+        earliest_image = self.image_queue[0]
+
+        bbox = FaceRecognition.get_face_box(earliest_image)
+        if bbox is None:
+            return FaceBoundingBox(
+                x1=0,
+                y1=0,
+                x2=0,
+                y2=0
+            )
+
+        x1, y1, x2, y2 = bbox
+        face_bbox = FaceBoundingBox(x1=x1, y1=y1, x2=x2, y2=y2)
+
+        return face_bbox
