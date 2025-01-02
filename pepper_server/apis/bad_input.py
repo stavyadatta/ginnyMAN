@@ -1,3 +1,4 @@
+from .api_object import ApiObject
 from .api_base import ApiBase
 
 class _BadInput(ApiBase):
@@ -7,5 +8,5 @@ class _BadInput(ApiBase):
     def __call__(self, person_details):
         response = ""
 
-        yield response
+        yield ApiObject(response)
 

@@ -1,3 +1,4 @@
+from .api_object import ApiObject
 from .api_base import ApiBase
 
 from utils import PersonDetails, Neo4j, message_format
@@ -20,7 +21,7 @@ class _PersonAttribute(ApiBase):
             llm_response = ""
             for chunk in response:
                 llm_response += chunk
-                yield chunk
+                yield ApiObject(chunk)
         
             llm_dict = message_format("assistant", llm_response)
             person_details.add_message(llm_dict)

@@ -24,6 +24,9 @@ def find_best_match(input_string, dictionary_keys):
         if similarity > highest_similarity:
             highest_similarity = similarity
             best_match = key
+
+    # if highest_similarity < 50:
+    #     return "speak"
     
     return best_match
 

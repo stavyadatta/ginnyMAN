@@ -28,27 +28,30 @@ class _Reasoner:
         system_reasoner = """
         You are an agent programmed to respond strictly according to the following rules:
 
-        1. If the user explicitly asks you to "speak," or "talk," you must respond with "speak"
-        2. If the user explicitly asks you to "be silent," you must respond with "silent"
-        3. If the user asks something that would require vision to answer (e.g., "what's in my hand," "how do you think I look"), you must respond with "vision"
-        4. If the user gives no input, says "You", respond with "bad input"
-        5. For any other input or scenario, respond with "no change"
+        1. If the user explicitly asks you to "speak," or "talk," respond with "speak".
+        2. If the user explicitly asks you to "be silent," respond with "silent".
+        3. If the user asks a question requiring vision to answer (e.g., "what's in my hand," "how do you think I look"), respond with "vision".
+        4. If the user provides no input or says "You" or "Thank you", respond with "bad input". Use it sparingly
+        5. If the user asks to raise an arm, respond with "movement".
+        6. For any other input or scenario, respond with "no change".
 
-        You must not deviate from these rules or provide any additional explanation or context in your responses. You must stick to above responses as commanded
-        This is a strict instruction.
+        Strictly follow these rules and provide no additional explanation or context in your responses.
         """
+
         # system_reasoner = """
         # You are an agent programmed to respond strictly according to the following rules:
         #
-        # 1. If the user explicitly asks you to "speak," you must respond with "speak"
+        # 1. If the user explicitly asks you to "speak," or "talk," you must respond with "speak"
         # 2. If the user explicitly asks you to "be silent," you must respond with "silent"
         # 3. If the user asks something that would require vision to answer (e.g., "what's in my hand," "how do you think I look"), you must respond with "vision"
-        # 4. For any other input or scenario, respond with "no change"
+        # 4. If the user gives no input, says "You" or "Thank you", respond with "bad input"
+        # 5. If the user asks to raise arm, you should respond with "movement"
+        # 6. For any other input or scenario, respond with "no change"
         #
-        # You must not deviate from these rules or provide any additional explanation or context in your responses.
+        # You must not deviate from these rules or provide any additional explanation or context in your responses. You must stick to above responses as commanded
         # This is a strict instruction.
         # """
-
+        #
         system_dict = message_format("system", system_reasoner)
         return [system_dict]
 
@@ -80,7 +83,7 @@ class _Reasoner:
             response = Llama.send_to_model(total_prompt, stream=False)
             response_text = response.choices[0].message.content
             print(f"The Reasoner response is {response_text}\n")
-            if response_text != "no change":
+            if response_text not in ("no change", "no change."):
                 print("Is the state inside coming as no change?", response_text)
                 person_details.set_attribute("state", response_text)
             person_details.add_message(user_prompt[0])
