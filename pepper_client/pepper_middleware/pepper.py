@@ -17,7 +17,7 @@ from google.protobuf.empty_pb2 import Empty
 from grpc_communication.grpc_pb2 import AudioImgRequest, ImageStreamRequest
 from grpc_communication.grpc_pb2_grpc import MediaServiceStub
 from pepper_api import CameraManager, AudioManager2, HeadManager, EyeLEDManager, \
-    SpeechManager, SpeechProcessor
+    SpeechManager, SpeechProcessor, ArmManager
 
 logging.basicConfig(filename="app.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -45,6 +45,7 @@ class Pepper():
 
 
         self.head_manager = HeadManager(self.session)
+        self.arm_manager = ArmManager(self.session)
 
         self.session.registerService("CameraManager", self.camera_manager)
         self.life_service.setAutonomousAbilityEnabled("All", False)
@@ -53,7 +54,9 @@ class Pepper():
         return self.camera_manager.get_image(raw=True)
 
     def get_audio(self):
+        self.eye_led_manager.set_eyes_blue()
         audio_data, samplerate = self.audio_manager.startProcessing()
+        self.eye_led_manager.set_eyes_red()
         return audio_data, samplerate
 
     def send_img(self):
@@ -136,6 +139,9 @@ class Pepper():
         except KeyboardInterrupt:
             logger.info("Stopping image streaming...")
             raise KeyboardInterrupt()
+        except TypeError:
+            print("Running the capture stream again")
+            self.capture_and_stream_images()
 
     def get_vertical_and_horizontal_axis(self, box, img_shape, stop_threshold=0.5, vertical_offset=0.5):
         box_center = np.array([box[2] / 2 + box[0] / 2, box[1] * (1 - vertical_offset) + box[3] * vertical_offset])
@@ -184,31 +190,39 @@ class Pepper():
 
     def send_audio(self):
         audio_data, sample_rate = self.get_audio()
-        last_frame = self.make_img_compatible()
-        height, width, _ = last_frame.shape
-        _, image_data = cv2.imencode(".jpg", last_frame)
-
-        request = AudioImgRequest(
-            audio_data=audio_data,
-            sample_rate=sample_rate,
-            num_channels=1,  # Assuming mono audio
-            audio_encoding="PCM_16",
-            audio_description="Audio captured by Pepper",
-            image_data=image_data.tobytes(),
-            image_format="JPEG",
-            image_width=width,
-            image_height=height,
-            image_description="Captured Pepper"
-        )
-
-        # Send the request to the gRPC server
         try:
-            response = self.stub.SendAudioImg(request)
-        except grpc.RpcError as e:
-            print("gRPC in sending audio error: {} - " \
-            "{}".format(e.code(), e.details()))
+            last_frame = self.make_img_compatible()
+        except TypeError:
+            print("Send audio was not receiving last frame")
+            self.send_audio()
+        try:
+            height, width, _ = last_frame.shape
+            _, image_data = cv2.imencode(".jpg", last_frame)
+            request = AudioImgRequest(
+                audio_data=audio_data,
+                sample_rate=sample_rate,
+                num_channels=1,  # Assuming mono audio
+                audio_encoding="PCM_16",
+                audio_description="Audio captured by Pepper",
+                image_data=image_data.tobytes(),
+                image_format="JPEG",
+                image_width=width,
+                image_height=height,
+                image_description="Captured Pepper"
+            )
 
-        time.sleep(1)  # Adjust delay as needed
+            # Send the request to the gRPC server
+            try:
+                response = self.stub.SendAudioImg(request)
+            except grpc.RpcError as e:
+                print("gRPC in sending audio error: {} - " \
+                "{}".format(e.code(), e.details()))
+
+            time.sleep(1)  # Adjust delay as needed
+        except UnboundLocalError as e:
+            print("Unbounded local error occuring")
+            traceback.print_exc()
+            self.send_audio()
 
     def receive_llm_response(self):
         speech_processor = SpeechProcessor(self.speech_manager)
@@ -230,6 +244,9 @@ class Pepper():
         builder_thread.join()
         speech_processor.is_running = False
         speaker_thread.join()
+
+        if speech_processor.movement:
+            self.arm_manager.raise_arm()
 
 
     def close(self):
@@ -269,10 +286,12 @@ if __name__ == "__main__":
             p.send_audio()
             p.receive_llm_response()
     except KeyboardInterrupt:
+        p.close()
         print("Program interrupted by user.")
         image_thread.join()
         head_thread.join()
-        p.close()
-    finally:
+    except Exception as e:
         # Ensure resources are cleaned up
+        print("the p close is getting called because of the following issues ", e)
+        traceback.print_exc()
         p.close()

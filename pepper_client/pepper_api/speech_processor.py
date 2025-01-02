@@ -10,6 +10,7 @@ class SpeechProcessor:
         self.current_sentence = ""
         self.speech_manager = speech_manager  # Instance of Pepper's speech manager
         self.is_running = True  # Flag to control the threads
+        self.movement = False
 
     def build_sentences(self, response_stream):
         """
@@ -23,6 +24,7 @@ class SpeechProcessor:
 
                 # Append chunk words to the current sentence
                 self.current_sentence += chunk.text
+                self.movement = chunk.movement
 
                 # Check for sentence-ending punctuation
                 if re.search(r'[.!?]$', chunk.text.strip()):
