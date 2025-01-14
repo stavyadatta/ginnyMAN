@@ -13,12 +13,24 @@ from grpc_communication.grpc_pb2 import AudioImgRequest, ImageStreamRequest
 from grpc_communication.grpc_pb2_grpc import MediaServiceStub
 
 # Configure logger
-logging.basicConfig(filename="app.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+# logging.basicConfig(filename="app.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# logger = logging.getLogger(__name__)
+logger = logging.getLogger("my_logger")
+logger.setLevel(logging.DEBUG)  # Set the logging level
+
+stream_handler = logging.StreamHandler()
+stream_handler.setLevel(logging.DEBUG)  # Set the logging level for the handler
+
+# Create a formatter and set it for the handler
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+stream_handler.setFormatter(formatter)
+
+# Add the handler to the logger
+logger.addHandler(stream_handler)
 
 static_img = None
 
-THRESHOLD = 55000
+THRESHOLD = 1000000
 SILENCE_FRAMES = 10
 CHUNK = 1024
 RATE = 16000
@@ -61,6 +73,7 @@ def record_until_silence():
 
         audio_samples = np.frombuffer(data, dtype=np.int16)
         energy = np.sum(audio_samples.astype(np.int32) ** 2) / len(audio_samples)
+
 
         if energy < THRESHOLD:
             silent_count += 1
