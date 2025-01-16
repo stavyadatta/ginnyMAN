@@ -29,26 +29,18 @@ def process_audio(audio_img_queue: queue.Queue,
         try:
             # Transcribe the audio
             transcription = WhisperSpeech2Text(audio_img_item)
-            # if len(transcription) < 2:
-            #     print("Coming in the less than 2 if statement")
-            #     llama_response_queue.put({
-            #         'text': '',
-            #         'is_final': True
-            #     })
-            #     break
             print(f"Transcription: {transcription}")
 
             # Get the face information 
             image = audio_img_item.get("image_data")
-            cv2.imwrite("/workspace/database/face_db/some.png", image)
             face_id = FaceRecognition.get_most_frequent_face_id(image_queue)
 
             person_details = Reasoner(transcription, face_id)
             if person_details.get_attribute("state") == "vision":
                 person_details.set_image(image)
-            response = Executor(person_details)
 
             print("Executor response:")
+            response = Executor(person_details)
             movement = False
             for response_chunk in response:
                 movement = response_chunk.movement

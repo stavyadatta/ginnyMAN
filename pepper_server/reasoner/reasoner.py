@@ -3,6 +3,7 @@ from typing import Optional
 
 from utils import Neo4j, PersonDetails, message_format
 from core_api import Llama
+from .prompt import reasoner_prompt
 
 class _Reasoner:
     def __init__(self):
@@ -25,18 +26,20 @@ class _Reasoner:
         return input_string.lower()
 
     def _developing_reasoning_prompt(self):
-        system_reasoner = """
-        You are an agent programmed to respond strictly according to the following rules:
-
-        1. If the user explicitly asks you to "speak," or "talk," respond with "speak".
-        2. If the user explicitly asks you to "be silent," respond with "silent".
-        3. If the user asks a question requiring vision to answer (e.g., "what's in my hand," "how do you think I look"), respond with "vision".
-        4. If the user provides no input or says "You" or "Thank you", respond with "bad input". Use it sparingly
-        5. If the user asks to raise an arm, respond with "movement".
-        6. For any other input or scenario, respond with "no change".
-
-        Strictly follow these rules and provide no additional explanation or context in your responses.
-        """
+        system_reasoner = reasoner_prompt
+        # system_reasoner = """
+        # You are an agent programmed to respond strictly according to the following rules:
+        #
+        # 1. If the user explicitly asks you to "speak," or "talk," respond with "speak".
+        # 2. If the user explicitly asks you to "be silent," respond with "silent".
+        # 3. If the user asks a question requiring vision to answer (e.g., "what's in my hand," "how do you think I look"), respond with "vision".
+        # 4. If the user provides no input or says "You" or "Thank you", respond with "bad input". Use it sparingly
+        # 5. If the user asks to raise an arm, respond with "movement".
+        # 6. For any other input or scenario, respond with "no change".
+        # Examples under the delimitters
+        #
+        # Strictly follow these rules and provide no additional explanation or context in your responses.
+        # """
 
         # system_reasoner = """
         # You are an agent programmed to respond strictly according to the following rules:
