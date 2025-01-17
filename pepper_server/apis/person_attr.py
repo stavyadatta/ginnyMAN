@@ -2,7 +2,7 @@ from .api_object import ApiObject
 from .api_base import ApiBase
 
 from utils import PersonDetails, Neo4j, message_format
-from core_api import PersonDetectionCropper, ChatGPT
+from core_api import PersonDetectionCropper, ChatGPT, Grok
 
 class _PersonAttribute(ApiBase):
     def __init__(self) -> None:
@@ -17,7 +17,8 @@ class _PersonAttribute(ApiBase):
             cropped_person = PersonDetectionCropper.detect_and_crop_person(image)
             assert cropped_person is not None
 
-            response = ChatGPT.process_image_and_text(cropped_person, person_details)
+            # response = ChatGPT.process_image_and_text(cropped_person, person_details)
+            response = Grok.process_image_and_text(cropped_person, person_details)
             llm_response = ""
             for chunk in response:
                 llm_response += chunk
