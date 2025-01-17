@@ -132,7 +132,7 @@ class _FaceRecognition:
         Returns:
             FaceAnalysis: The initialized and prepared face analysis object.
         """
-        providers = ['CUDAExecutionProvider', 'CPUExecutionProvider'] if torch.cuda.is_available() else ['CPUExecutionProvider']
+        providers = [('CUDAExecutionProvider', {"device_id": 2}), 'CPUExecutionProvider'] if torch.cuda.is_available() else ['CPUExecutionProvider']
         app = FaceAnalysis(name=self.model_name, providers=providers)
         app.prepare(ctx_id=0 if torch.cuda.is_available() else -1)
         return app

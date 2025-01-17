@@ -167,6 +167,12 @@ response: movement
 
 input: move forward for me
 response: movement
+
+input: can you dance for me
+response: movement
+
+input: can you give a high five
+response: movement
 ```
 Strictly follow these rules and provide no additional explanation or context in your responses.
 """

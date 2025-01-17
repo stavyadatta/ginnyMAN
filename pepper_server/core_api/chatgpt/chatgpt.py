@@ -3,6 +3,7 @@ import openai
 import base64
 import cv2
 import numpy as np
+from openai.types import model
 
 class _OpenAIHandler:
     def __init__(self, model_name="gpt-4"):
@@ -74,6 +75,27 @@ class _OpenAIHandler:
         except Exception as e:
             yield f"Unexpected Error: {str(e)}"
 
+    def send_text(self, messages: list[dict], stream: bool, img=None):
+        """
+            :param messages: A dictionary of messages for additional context to be 
+             provided to the model for benefit
+            :param stream: Whether to stream the output or not
+            :param img: incase of VLM adding an image for additional context
+
+            :return: Generator of words from llm incase of stream otherwise whole text 
+                output
+        """
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages,
+                max_tokens=500,
+                stream=stream
+            )
+            return response
+        except openai.OpenAIError as e:
+            return f"API Error: {str(e)}"
+
     def develop_last_message(self, last_message, img_base64):
         """
         Create the last message dictionary with the image included.
@@ -114,4 +136,5 @@ class _OpenAIHandler:
         )
 
         return robot_description
+
 

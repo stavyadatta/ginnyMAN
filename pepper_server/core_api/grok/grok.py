@@ -34,6 +34,28 @@ class _GrokHandler:
 
         return encoded_image
 
+
+    def send_text(self, messages: list[dict], stream: bool, img=None):
+        """
+            :param messages: A dictionary of messages for additional context to be 
+             provided to the model for benefit
+            :param stream: Whether to stream the output or not
+            :param img: incase of VLM adding an image for additional context
+
+            :return: Generator of words from llm incase of stream otherwise whole text 
+                output
+        """
+        response = self.client.chat.completions.create(
+            model= "grok-2-vision-1212",
+            messages= messages,
+            temperature=0.7,
+            max_tokens=500,
+            top_p=0.9,
+            stream=stream
+        )
+        return response
+
+
     def process_image_and_text(self, image, person_details, max_tokens=1000):
         """
         Process an image and text prompt using OpenAI API with streaming.

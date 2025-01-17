@@ -10,7 +10,7 @@ class _WhisperSpeech2Text:
         """
         Initialize the Whisper model for speech-to-text.
         """
-        self.model = whisper.load_model(model_name)
+        self.model = whisper.load_model(model_name, device=torch.device("cuda:2"))
 
     def _save2temp(self, audio_data):
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
