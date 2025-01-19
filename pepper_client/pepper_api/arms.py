@@ -9,6 +9,12 @@ class ArmManager:
         # Wake up the robot
         print("Initialized ArmManager and woke up the robot.")
 
+    def movement(self, joint_names: list, joint_angles: list, speed: list):
+        try:
+            self.motion_service.setAngles(joint_names, joint_angles, speed)
+        except Exception as e:
+            print("An error occurred while moving the arm {}".format(e))
+
     def raise_arm(self, joint_name="LShoulderPitch", upward_angle=-1.0, downward_angle=1.5, speed=0.2):
         """
         Raises and then lowers the specified arm joint.

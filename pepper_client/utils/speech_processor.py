@@ -3,12 +3,11 @@ import re
 import grpc
 from collections import deque
 
-
 class SpeechProcessor:
-    def __init__(self, speech_manager):
+    def __init__(self, speech_function):
         self.sentence_queue = deque()  # Queue for sentences
         self.current_sentence = ""
-        self.speech_manager = speech_manager  # Instance of Pepper's speech manager
+        self.speech_function = speech_function  # Instance of Pepper's speech manager
         self.is_running = True  # Flag to control the threads
         self.movement = False
 
@@ -45,4 +44,4 @@ class SpeechProcessor:
         while self.is_running or self.sentence_queue:
             if self.sentence_queue:
                 sentence_to_say = self.sentence_queue.popleft()
-                self.speech_manager.say(sentence_to_say)
+                self.speech_function(sentence_to_say)

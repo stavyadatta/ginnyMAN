@@ -17,7 +17,8 @@ from google.protobuf.empty_pb2 import Empty
 from grpc_communication.grpc_pb2 import AudioImgRequest, ImageStreamRequest
 from grpc_communication.grpc_pb2_grpc import MediaServiceStub
 from pepper_api import CameraManager, AudioManager2, HeadManager, EyeLEDManager, \
-    SpeechManager, SpeechProcessor, ArmManager
+    SpeechManager, ArmManager
+from utils import SpeechProcessor
 
 logging.basicConfig(filename="app.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -58,39 +59,6 @@ class Pepper():
         audio_data, samplerate = self.audio_manager.startProcessing()
         self.eye_led_manager.set_eyes_red()
         return audio_data, samplerate
-
-    def send_img(self):
-        # Add your image sending gprc code here
-        while True:
-            raw_image = self.get_image()
-
-            image_format = "JPEG"
-            image_width = raw_image[0]
-            image_height = raw_image[1]
-            pil_image = Image.frombytes(
-                "RGB", (image_width, image_height), bytes(raw_image[6])
-            )
-            print("The image is being developed here ", pil_image)
-            buffer = BytesIO()
-            pil_image.save(buffer, format=image_format)
-            buffer.seek(0)
-            
-            request = ImageRequest(
-                image_data=buffer.read(),
-                format=image_format,
-                width=image_width,
-                height=image_height,
-                description="Image captured by Pepper"
-            )
-
-            # Send the request to the gRPC server
-            try:
-                response = self.stub.SendImage(request)
-                # print(f"Response from server: {response.status} - {response.message}")
-            except grpc.RpcError as e:
-                # print(f"gRPC error: {e.code()} - {e.details()}")
-                print("some error")
-            
 
     def make_img_compatible(self):
         raw_image = self.get_image()
@@ -225,7 +193,7 @@ class Pepper():
             self.send_audio()
 
     def receive_llm_response(self):
-        speech_processor = SpeechProcessor(self.speech_manager)
+        speech_processor = SpeechProcessor(self.speech_manager.say)
         
         request = Empty()
         response_stream = stub.LLmResponse(request)
