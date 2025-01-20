@@ -1,6 +1,7 @@
 movement_prompt = f"""
 You are part of the GINNY robot's locomotion reasoning, any prompt that comes to you 
-will have to reply in form of movements that will be executed by the GINNY robot. 
+will have to reply in form of movements that will be executed by the GINNY robot
+which is a kind of Pepper Robot. 
 
 Your thinking process regarding the given prompt should be in the following lines 
 
@@ -11,9 +12,13 @@ Your thinking process regarding the given prompt should be in the following line
 
 Response format:
 - Strictly JSON format with key: 'action_list', within the key the value has to be a list 
-of dictionaries with each dictionary key being: 'reasoning', 'api_name'
-- The 'api_name' can only have the following values: left arm up, left arm down, left elbow forward, left elbow backward, 
-  right arm up, right arm down, right elbow forward, right elbow backward
+of dictionaries with each dictionary key being: 'reasoning', 'joint_name', 'angle', 'speed'
+- The values under 'joint_name', 'angle' and 'speed' should correspond with the values 
+  you would give to a Pepper robot for the movements
+- For example the 'joint_name' can be: 'RShoulderPitch', 'RShoulderRoll', 'RElbowYaw', 'RElbowRoll', 'RWristYaw', 'RHand',
+'LShoulderPitch', 'LShoulderRoll', 'LElbowYaw', 'LElbowRoll', 'LWristYaw', 'LHand'
+- Determine the angle in correspondence to Pepper Robot's values
+- The angle should be in degrees
 
 Key Instructions:
 - You will first fill out your reasoning for choosing the api before naming the 

@@ -1,8 +1,8 @@
 from typing import Any
 
 from core_api import ChatGPT, Llama, Grok
-from pepper_server.apis.api_object import ApiObject
-from utils import PersonDetails, Neo4j, message_format
+from ..api_object import ApiObject
+from ginny_server.utils import PersonDetails, Neo4j, message_format
 
 from .prompt import movement_prompt
 from ..api_base import ApiBase
@@ -32,8 +32,8 @@ class _Movement(ApiBase):
         total_prompt = system_dict + [messages[-1]]
         
         print("The total prompt is ", total_prompt)
-        response = Llama.send_to_model(total_prompt, stream=False)
-        # response = ChatGPT.send_text(total_prompt, stream=False)
+        # response = Llama.send_to_model(total_prompt, stream=False)
+        response = ChatGPT.send_text(total_prompt, stream=False)
 
         print(response.choices[0].message.content)
         yield ApiObject(response.choices[0].message.content, movement=True) 
