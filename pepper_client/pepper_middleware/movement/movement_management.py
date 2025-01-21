@@ -1,10 +1,8 @@
 import re
 import json
 
-from server_api import PepperClientAPI
-
-class MovementManagement():
-    def __init__(self) -> None:
+class _MovementManagement():
+    def __init__(self):
         pass
 
     def extract_json_from_text(self, text):
@@ -16,20 +14,19 @@ class MovementManagement():
         :raises ValueError: If no valid JSON is found in the text.
         """
         # Regular expression to find JSON-like structures in the text
-        json_pattern = r'\{.*?\}'
-        match = re.search(json_pattern, text)
-        
-        if match:
-            json_string = match.group()
-            try:
-                return json.loads(json_string)
-            except json.JSONDecodeError:
-                raise ValueError("Found a JSON-like structure, but it is not valid JSON.")
+        try:
+            print("Well trying the json loads thingy")
+            return json.loads(text)
+        except json.JSONDecodeError:
+            print("Entering the error")
+            raise ValueError("Found a JSON-like structure, but it is not valid JSON.")
         
         raise ValueError("No valid JSON found in the text.")
 
-    def __call__(self, llm_response, pepper: PepperClientAPI):
+    def __call__(self, llm_response, pepper):
+        print("The thing is getting valled yes")
         action_json = self.extract_json_from_text(llm_response)
+        print("The json action is \n \n \n \n ", action_json)
         action_items = action_json.get("action_list")
         joint_names = []
         angles = []
@@ -40,6 +37,7 @@ class MovementManagement():
             angles.append(action.get("angle"))
             speed.append(action.get("speed"))
 
+        print("Highfice dictionary ", joint_names, angles, speed)
         pepper.arm_movement(joint_names, angles, speed)
 
 

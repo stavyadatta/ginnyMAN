@@ -1,7 +1,18 @@
-import sys
 import re
+import sys
+import json
+
 import grpc
 from collections import deque
+
+from movement import MovementManager
+
+def is_valid_json(text):
+    try:
+        json.loads(text)
+        return True
+    except Exception:
+        return False
 
 class SpeechProcessor:
     def __init__(self, speech_function):
@@ -26,7 +37,9 @@ class SpeechProcessor:
                 self.movement = chunk.movement
 
                 # Check for sentence-ending punctuation
-                if re.search(r'[.!?]$', chunk.text.strip()):
+                if is_valid_json(self.current_sentence):
+                    self.sentence_queue.append(self.current_sentence)
+                elif re.search(r'[.!?]$', chunk.text.strip()):
                     # Join the words to form a complete sentence
                     self.sentence_queue.append(self.current_sentence.strip())  # Add to queue
                     self.current_sentence = ""
@@ -37,11 +50,18 @@ class SpeechProcessor:
         except grpc.RpcError as e:
             print("gRPC LLM response error: {} - {}".format(e.code(), e.details()))
 
-    def say_sentences(self):
+    def execute_response(self, pepper):
         """
         Continuously retrieve sentences from the queue and make Pepper speak them.
         """
+        print("execute response first \n \n \n")
         while self.is_running or self.sentence_queue:
             if self.sentence_queue:
                 sentence_to_say = self.sentence_queue.popleft()
-                self.speech_function(sentence_to_say)
+                if not is_valid_json(sentence_to_say):
+                    self.speech_function(sentence_to_say)
+                else:
+                    print("Is it coming for the valid movement manager \n \n \n")
+                    MovementManager(sentence_to_say, pepper)
+
+

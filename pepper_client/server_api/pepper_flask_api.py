@@ -1,9 +1,10 @@
-
+import cv2
 import requests
 import base64
 import io
 import wave
 from PIL import Image
+import numpy as np
 
 class PepperClientAPI(object):
     def __init__(self, host="127.0.0.1", port=8069):
@@ -22,6 +23,7 @@ class PepperClientAPI(object):
     def get_audio(self):
         url = self.base_url + "/get_audio"
         response = requests.get(url)
+        print("response is this")
         data = response.json()
 
         audio_base64 = data["audio_base64"]
@@ -43,7 +45,10 @@ class PepperClientAPI(object):
         img_base64 = data["image_base64"]
         img_bytes = base64.b64decode(img_base64)
         pil_image = Image.open(io.BytesIO(img_bytes))
-        return pil_image
+        numpy_image = np.array(pil_image)
+        cv2_image = numpy_image[:, :, ::-1]  # Reverse the color channels
+        cv2_image = cv2.flip(cv2_image, 0)
+        return cv2_image
 
     def say_text(self, text):
         """
@@ -92,28 +97,4 @@ class PepperClientAPI(object):
         response = requests.post(url, json=payload)
         return response.json()
 
-
-# Example usage
-if __name__ == "__main__":
-    client_api = PepperClientAPI(host="127.0.0.1", port=8069)
-
-    # Test saying something
-    result = client_api.say_text("Hello from Python 2!")
-    print("Response from /say_text:", result)
-
-    # Test image
-    image = client_api.get_image()
-    print("Retrieved image from server, size: {}".format(image.size))
-    image.save("test_image.jpg")
-
-    # Test audio
-    audio_frames, sr = client_api.get_audio()
-    print("Retrieved audio, samplerate: {}".format(sr))
-    with open("test_audio.wav", "wb") as f:
-        f.write(audio_frames)
-
-    # Test make_img_compatible
-    compatible_image = client_api.make_img_compatible()
-    print("Retrieved make_img_compatible image from server, size: {}".format(compatible_image.size))
-    compatible_image.save("test_image_compatible.jpg")
 

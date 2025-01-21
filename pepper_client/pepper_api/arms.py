@@ -1,7 +1,8 @@
 import qi
-import argparse
 import sys
 import time
+import motion
+import argparse
 
 class ArmManager:
     def __init__(self, session):
@@ -9,11 +10,13 @@ class ArmManager:
         # Wake up the robot
         print("Initialized ArmManager and woke up the robot.")
 
-    def movement(self, joint_names: list, joint_angles: list, speed: list):
-        try:
-            self.motion_service.setAngles(joint_names, joint_angles, speed)
-        except Exception as e:
-            print("An error occurred while moving the arm {}".format(e))
+    def movement(self, joint_names, joint_angles, speed):
+        for name, angle, sp in zip(joint_names, joint_angles, speed):
+            radian_angle = angle * motion.TO_RAD
+            try:
+                self.motion_service.angleInterpolationWithSpeed(name, radian_angle, sp)
+            except Exception as e:
+                print("An error occurred while moving the arm {}".format(e))
 
     def raise_arm(self, joint_name="LShoulderPitch", upward_angle=-1.0, downward_angle=1.5, speed=0.2):
         """

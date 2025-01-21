@@ -14,6 +14,8 @@ from grpc_communication.grpc_pb2 import AudioImgRequest, ImageStreamRequest
 from grpc_communication.grpc_pb2_grpc import MediaServiceStub
 from utils import SpeechProcessor, is_zero_list, get_vh_axis
 
+from movement import MovementManager
+
 logging.basicConfig(filename="app.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -125,7 +127,7 @@ class PepperManager():
             target=speech_processor.build_sentences, 
             args=(response_stream,)
         )
-        speaker_thread = Thread(target=speech_processor.say_sentences)
+        speaker_thread = Thread(target=speech_processor.execute_response)
 
         builder_thread.start()
         speaker_thread.start()
@@ -136,5 +138,39 @@ class PepperManager():
         speaker_thread.join()
 
         if speech_processor.movement:
-            self.arm_manager.raise_arm()
+            for chunk in response_stream:
+                MovementManager(chunk, self.pepper)
+
+
+if __name__ == "__main__":
+    channel = grpc.insecure_channel("172.27.72.27:50051")
+    stub = MediaServiceStub(channel)
+    p = PepperManager(stub)
+
+    image_thread = Thread(target=p.capture_and_stream_images, args=()) 
+    image_thread.daemon = True
+    image_thread.start()
+
+
+    head_thread = Thread(target=p.head_management, args=())
+    head_thread.daemon = True
+    head_thread.start()
+    
+    try:
+        while True:
+            p.send_audio()
+            p.receive_llm_response()
+    except KeyboardInterrupt:
+        print("Program interrupted by user.")
+        image_thread.join()
+        head_thread.join()
+        exit()
+    except Exception as e:
+        # Ensure resources are cleaned up
+        print("the p close is getting called because of the following issues ", e)
+        traceback.print_exc()
+
+
+
+
 

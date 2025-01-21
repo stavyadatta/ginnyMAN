@@ -9,7 +9,9 @@ import cv2
 from PIL import Image
 from flask import Flask, request, jsonify
 
-from .pepper_flask import PepperFlask
+# from pepper_client.pepper_server.pepper_flask import PepperFlask
+from pepper_flask import PepperFlask
+# from pepper_client.pepper_server import PepperFlask
 # For Python 2 compatibility: from __future__ import print_function (if needed)
 # import wave, struct, etc. as needed for audio
 # from pepper_api import CameraManager, AudioManager2, HeadManager, EyeLEDManager, SpeechManager, ArmManager
@@ -49,6 +51,7 @@ def flask_get_audio():
     Calls PepperFlask.get_audio() and returns audio data as base64-encoded WAV + samplerate.
     """
     audio_data, samplerate = pepper.get_audio()
+    print("Well I am comning to the get_audio part atleast")
 
     import wave
     import struct
@@ -58,13 +61,19 @@ def flask_get_audio():
     wave_file.setnchannels(1)      # Adjust if your audio is stereo
     wave_file.setsampwidth(2)     # 16-bit audio
     wave_file.setframerate(samplerate)
+    print("Am  icoming after the wave")
 
     # Write frames
     for sample in audio_data:
         wave_file.writeframes(struct.pack('<h', sample))
     wave_file.close()
 
+    print("Wave 2")
     audio_base64 = base64.b64encode(byte_io.getvalue())
+    print("Is it coming here for the json ", {
+        "audio_base64": audio_base64.decode('utf-8'),
+        "samplerate": samplerate
+    })
     return jsonify({
         "audio_base64": audio_base64.decode('utf-8'),
         "samplerate": samplerate

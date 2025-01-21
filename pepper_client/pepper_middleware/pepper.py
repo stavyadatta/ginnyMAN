@@ -19,6 +19,7 @@ from grpc_communication.grpc_pb2_grpc import MediaServiceStub
 from pepper_api import CameraManager, AudioManager2, HeadManager, EyeLEDManager, \
     SpeechManager, ArmManager
 from utils import SpeechProcessor
+from movement import MovementManager
 
 logging.basicConfig(filename="app.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -129,6 +130,9 @@ class Pepper():
                 return True
         return False
 
+    def arm_movement(self, joint_names, joint_angles, speed):
+        self.arm_manager.movement(joint_names, joint_angles, speed)
+
     def head_management(self):
         try:
             cv2_image = self.make_img_compatible()
@@ -203,7 +207,10 @@ class Pepper():
             target=speech_processor.build_sentences, 
             args=(response_stream,)
         )
-        speaker_thread = Thread(target=speech_processor.say_sentences)
+        speaker_thread = Thread(
+            target=speech_processor.execute_response,
+            args=(self,)
+        )
 
         builder_thread.start()
         speaker_thread.start()
@@ -213,9 +220,10 @@ class Pepper():
         speech_processor.is_running = False
         speaker_thread.join()
 
-        if speech_processor.movement:
-            self.arm_manager.raise_arm()
-
+        # if speech_processor.movement:
+        #     print("Is this coming here, do you think its coming in the movement")
+        #     MovementManager(speech_processor.json_text, self)
+        #     speech_processor.json_text = ''
 
     def close(self):
     # Shut down services and clean up resources
@@ -256,6 +264,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         p.close()
         print("Program interrupted by user.")
+        exit()
         image_thread.join()
         head_thread.join()
     except Exception as e:
