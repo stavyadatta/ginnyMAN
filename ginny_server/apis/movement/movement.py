@@ -33,7 +33,7 @@ class _Movement(ApiBase):
         
         print("The total prompt is ", total_prompt)
         # response = Llama.send_to_model(total_prompt, stream=False)
-        response = ChatGPT.send_text(total_prompt, stream=False)
+        response = ChatGPT.send_text_get_json(total_prompt, stream=False)
 
         print(response.choices[0].message.content)
         yield ApiObject(response.choices[0].message.content, movement=True) 

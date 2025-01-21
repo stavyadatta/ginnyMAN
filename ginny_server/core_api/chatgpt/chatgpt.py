@@ -96,6 +96,29 @@ class _OpenAIHandler:
         except openai.OpenAIError as e:
             return f"API Error: {str(e)}"
 
+    def send_text_get_json(self, messages: list[dict], stream: bool, img=None):
+        """
+            :param messages: A dictionary of messages for additional context to be 
+             provided to the model for benefit
+            :param stream: Whether to stream the output or not
+            :param img: incase of VLM adding an image for additional context
+
+            :return: Generator of words from llm incase of stream otherwise whole text 
+                output
+        """
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4o",
+                messages=messages,
+                max_tokens=500,
+                stream=stream,
+                response_format={"type": "json_object"}
+            )
+            return response
+        except openai.OpenAIError as e:
+            return f"API Error: {str(e)}"
+
+
     def develop_last_message(self, last_message, img_base64):
         """
         Create the last message dictionary with the image included.
