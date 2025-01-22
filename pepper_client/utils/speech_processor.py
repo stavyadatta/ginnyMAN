@@ -34,14 +34,13 @@ class SpeechProcessor:
 
                 # Append chunk words to the current sentence
                 self.current_sentence += chunk.text
-                self.movement = chunk.movement
 
                 # Check for sentence-ending punctuation
                 if is_valid_json(self.current_sentence):
-                    self.sentence_queue.append(self.current_sentence)
+                    self.sentence_queue.append((self.current_sentence, chunk.mode))
                 elif re.search(r'[.!?]$', chunk.text.strip()):
                     # Join the words to form a complete sentence
-                    self.sentence_queue.append(self.current_sentence.strip())  # Add to queue
+                    self.sentence_queue.append((self.current_sentence.strip(), chunk.mode))  # Add to queue
                     self.current_sentence = ""
 
                 # Exit if the flag is turned off
@@ -57,7 +56,8 @@ class SpeechProcessor:
         print("execute response first \n \n \n")
         while self.is_running or self.sentence_queue:
             if self.sentence_queue:
-                sentence_to_say = self.sentence_queue.popleft()
+                sentence_tuple = self.sentence_queue.popleft()
+                sentence_to_say = sentence_tuple[0]
                 if not is_valid_json(sentence_to_say):
                     self.speech_function(sentence_to_say)
                 else:

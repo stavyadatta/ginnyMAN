@@ -116,7 +116,7 @@ class MediaManager(MediaServiceServicer):
                 chunk = self.llama_response_queue.get()
                 if chunk is None:
                     break
-                yield TextChunk(text=chunk['text'], is_final=chunk['is_final'], movement=chunk["movement"])
+                yield TextChunk(text=chunk['text'], is_final=chunk['is_final'], mode=chunk["movement"])
                 if chunk['is_final']:
                     break
         except Exception as e:

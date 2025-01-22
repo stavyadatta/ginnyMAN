@@ -1,5 +1,5 @@
 class ApiObject:
-    def __init__(self, textchunk=None, movement=False, code=None):
+    def __init__(self, textchunk=None, movement='default', code=None):
         """
         Initialize the ApiObject class.
 
