@@ -41,20 +41,20 @@ def process_audio(audio_img_queue: queue.Queue,
 
             print("Executor response:")
             response = Executor(person_details)
-            movement = False
+            mode = 'default'
             for response_chunk in response:
-                movement = response_chunk.movement
+                mode = response_chunk.mode
                 response_text = response_chunk.textchunk
                 print(response_text, end='', flush=True)
                 llama_response_queue.put({
                     'text': response_text,
                     'is_final': False,
-                    'movement': movement
+                    'mode': mode
                 })
             llama_response_queue.put({
                 'text': '',
                 'is_final': True,
-                'movement': movement
+                'mode': mode
             })
             print()  # Newline after streaming is complete
         except Exception as e:

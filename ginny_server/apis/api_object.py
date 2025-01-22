@@ -1,5 +1,5 @@
 class ApiObject:
-    def __init__(self, textchunk=None, movement='default', code=None):
+    def __init__(self, textchunk=None, mode='default', code=None):
         """
         Initialize the ApiObject class.
 
@@ -8,7 +8,7 @@ class ApiObject:
         textchunk: Optional. Represents a chunk of text.
         code: Optional. Represents code data.
         """
-        self.movement = movement
+        self.mode = mode
         self.textchunk = textchunk
         self.code = code
 
@@ -16,4 +16,4 @@ class ApiObject:
         """
         String representation of the ApiObject.
         """
-        return f"ApiObject(movement={self.movement}, textchunk={self.textchunk}, code={self.code})"
+        return f"ApiObject(movement={self.mode}, textchunk={self.textchunk}, code={self.code})"

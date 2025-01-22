@@ -116,7 +116,7 @@ class MediaManager(MediaServiceServicer):
                 chunk = self.llama_response_queue.get()
                 if chunk is None:
                     break
-                yield TextChunk(text=chunk['text'], is_final=chunk['is_final'], mode=chunk["movement"])
+                yield TextChunk(text=chunk['text'], is_final=chunk['is_final'], mode=chunk["mode"])
                 if chunk['is_final']:
                     break
         except Exception as e:
@@ -173,3 +173,6 @@ class MediaManager(MediaServiceServicer):
         face_bbox = FaceBoundingBox(x1=x1, y1=y1, x2=x2, y2=y2)
 
         return face_bbox
+    
+    def SecondaryChannel(self, request, context):
+
