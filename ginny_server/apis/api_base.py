@@ -1,6 +1,6 @@
 from typing import Any
 
-from utils import PersonDetails, Neo4j
+from utils import PersonDetails
 
 class ApiBase():
     def __init__(self) -> None:

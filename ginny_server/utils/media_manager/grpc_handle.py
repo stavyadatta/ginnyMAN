@@ -175,4 +175,5 @@ class MediaManager(MediaServiceServicer):
         return face_bbox
     
     def SecondaryChannel(self, request, context):
+        pass
 
