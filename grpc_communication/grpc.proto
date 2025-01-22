@@ -31,7 +31,7 @@ message AudioImgRequest {
     string image_format = 7;       // Image format (e.g., "JPEG", "PNG")
     int32 image_width = 8;         // Image width in pixels
     int32 image_height = 9;        // Image height in pixels
-    string image_description = 10; // Optional description for the image
+    string api_task = 10; // Optional description for the image
 }
 
 // Response message for sending both image and audio data
