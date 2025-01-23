@@ -184,15 +184,11 @@ class MediaManager(MediaServiceServicer):
                 image_bytes = request.image.image_data
                 image = self._decode_image_from_bytes(image_bytes)
                 response = SecondaryChannel(img=image, api_task=api_task)
-                is_final = False
-                if response.mode == 'done':
-                    is_final = True
-                elif response.mode == 'not done':
-                    is_final = False
+                mode = response.mode
                 return TextChunk(
                     text=response.textchunk,
-                    is_final=is_final,
-                    mode='default'
+                    is_final=False,
+                    mode=mode
                 )
         except Exception as e:
             error_trace = traceback.format_exc()
