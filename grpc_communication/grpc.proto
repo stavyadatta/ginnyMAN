@@ -63,3 +63,22 @@ message FaceBoundingBox {
   int32 x2 = 3; // Bottom-right x-coordinate
   int32 y2 = 4; // Bottom-right y-coordinate
 }
+
+// Secondary channel data related
+
+message SecondaryData {
+    string api_task=1;
+    optional Image image=2;
+    optional Audio audio=3;
+}
+
+message Image {
+    bytes image_data=1;
+}
+
+message Audio {
+    bytes audio_data = 1;          // Raw audio bytes
+    int32 sample_rate = 2;         // Sampling rate (e.g., 16000 Hz)
+    int32 num_channels = 3;        // Number of channels (e.g., 1 for mono, 2 for stereo)
+    string audio_encoding = 4;     // Encoding format for audio (e.g., "PCM_16", "MP3")
+}

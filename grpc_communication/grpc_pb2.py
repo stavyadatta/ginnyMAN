@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\ngrpc.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xea\x01\n\x0f\x41udioImgRequest\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x13\n\x0bsample_rate\x18\x02 \x01(\x05\x12\x14\n\x0cnum_channels\x18\x03 \x01(\x05\x12\x16\n\x0e\x61udio_encoding\x18\x04 \x01(\t\x12\x19\n\x11\x61udio_description\x18\x05 \x01(\t\x12\x12\n\nimage_data\x18\x06 \x01(\x0c\x12\x14\n\x0cimage_format\x18\x07 \x01(\t\x12\x13\n\x0bimage_width\x18\x08 \x01(\x05\x12\x14\n\x0cimage_height\x18\t \x01(\x05\x12\x10\n\x08\x61pi_task\x18\n \x01(\t\"3\n\x10\x41udioImgResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\"9\n\tTextChunk\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x10\n\x08is_final\x18\x02 \x01(\x08\x12\x0c\n\x04mode\x18\x03 \x01(\t\"\x84\x01\n\x12ImageStreamRequest\x12\x12\n\nimage_data\x18\x01 \x01(\x0c\x12\x14\n\x0cimage_format\x18\x02 \x01(\t\x12\x13\n\x0bimage_width\x18\x03 \x01(\x05\x12\x14\n\x0cimage_height\x18\x04 \x01(\x05\x12\x19\n\x11image_description\x18\x05 \x01(\t\"A\n\x0f\x46\x61\x63\x65\x42oundingBox\x12\n\n\x02x1\x18\x01 \x01(\x05\x12\n\n\x02y1\x18\x02 \x01(\x05\x12\n\n\x02x2\x18\x03 \x01(\x05\x12\n\n\x02y2\x18\x04 \x01(\x05\x32\x9e\x02\n\x0cMediaService\x12\x33\n\x0cSendAudioImg\x12\x10.AudioImgRequest\x1a\x11.AudioImgResponse\x12\x33\n\x0bLLmResponse\x12\x16.google.protobuf.Empty\x1a\n.TextChunk0\x01\x12=\n\x0cStreamImages\x12\x13.ImageStreamRequest\x1a\x16.google.protobuf.Empty(\x01\x12\x33\n\x07GetBbox\x12\x16.google.protobuf.Empty\x1a\x10.FaceBoundingBox\x12\x30\n\x10SecondaryChannel\x12\x10.AudioImgRequest\x1a\n.TextChunkb\x06proto3'
+  serialized_pb=b'\n\ngrpc.proto\x1a\x1bgoogle/protobuf/empty.proto\"\xea\x01\n\x0f\x41udioImgRequest\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x13\n\x0bsample_rate\x18\x02 \x01(\x05\x12\x14\n\x0cnum_channels\x18\x03 \x01(\x05\x12\x16\n\x0e\x61udio_encoding\x18\x04 \x01(\t\x12\x19\n\x11\x61udio_description\x18\x05 \x01(\t\x12\x12\n\nimage_data\x18\x06 \x01(\x0c\x12\x14\n\x0cimage_format\x18\x07 \x01(\t\x12\x13\n\x0bimage_width\x18\x08 \x01(\x05\x12\x14\n\x0cimage_height\x18\t \x01(\x05\x12\x10\n\x08\x61pi_task\x18\n \x01(\t\"3\n\x10\x41udioImgResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\"9\n\tTextChunk\x12\x0c\n\x04text\x18\x01 \x01(\t\x12\x10\n\x08is_final\x18\x02 \x01(\x08\x12\x0c\n\x04mode\x18\x03 \x01(\t\"\x84\x01\n\x12ImageStreamRequest\x12\x12\n\nimage_data\x18\x01 \x01(\x0c\x12\x14\n\x0cimage_format\x18\x02 \x01(\t\x12\x13\n\x0bimage_width\x18\x03 \x01(\x05\x12\x14\n\x0cimage_height\x18\x04 \x01(\x05\x12\x19\n\x11image_description\x18\x05 \x01(\t\"A\n\x0f\x46\x61\x63\x65\x42oundingBox\x12\n\n\x02x1\x18\x01 \x01(\x05\x12\n\n\x02y1\x18\x02 \x01(\x05\x12\n\n\x02x2\x18\x03 \x01(\x05\x12\n\n\x02y2\x18\x04 \x01(\x05\"m\n\rSecondaryData\x12\x10\n\x08\x61pi_task\x18\x01 \x01(\t\x12\x1a\n\x05image\x18\x02 \x01(\x0b\x32\x06.ImageH\x00\x88\x01\x01\x12\x1a\n\x05\x61udio\x18\x03 \x01(\x0b\x32\x06.AudioH\x01\x88\x01\x01\x42\x08\n\x06_imageB\x08\n\x06_audio\"\x1b\n\x05Image\x12\x12\n\nimage_data\x18\x01 \x01(\x0c\"^\n\x05\x41udio\x12\x12\n\naudio_data\x18\x01 \x01(\x0c\x12\x13\n\x0bsample_rate\x18\x02 \x01(\x05\x12\x14\n\x0cnum_channels\x18\x03 \x01(\x05\x12\x16\n\x0e\x61udio_encoding\x18\x04 \x01(\t2\x9e\x02\n\x0cMediaService\x12\x33\n\x0cSendAudioImg\x12\x10.AudioImgRequest\x1a\x11.AudioImgResponse\x12\x33\n\x0bLLmResponse\x12\x16.google.protobuf.Empty\x1a\n.TextChunk0\x01\x12=\n\x0cStreamImages\x12\x13.ImageStreamRequest\x1a\x16.google.protobuf.Empty(\x01\x12\x33\n\x07GetBbox\x12\x16.google.protobuf.Empty\x1a\x10.FaceBoundingBox\x12\x30\n\x10SecondaryChannel\x12\x10.AudioImgRequest\x1a\n.TextChunkb\x06proto3'
   ,
   dependencies=[google_dot_protobuf_dot_empty__pb2.DESCRIPTOR,])
 
@@ -319,11 +319,163 @@ _FACEBOUNDINGBOX = _descriptor.Descriptor(
   serialized_end=592,
 )
 
+
+_SECONDARYDATA = _descriptor.Descriptor(
+  name='SecondaryData',
+  full_name='SecondaryData',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='api_task', full_name='SecondaryData.api_task', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='image', full_name='SecondaryData.image', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='audio', full_name='SecondaryData.audio', index=2,
+      number=3, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+    _descriptor.OneofDescriptor(
+      name='_image', full_name='SecondaryData._image',
+      index=0, containing_type=None,
+      create_key=_descriptor._internal_create_key,
+    fields=[]),
+    _descriptor.OneofDescriptor(
+      name='_audio', full_name='SecondaryData._audio',
+      index=1, containing_type=None,
+      create_key=_descriptor._internal_create_key,
+    fields=[]),
+  ],
+  serialized_start=594,
+  serialized_end=703,
+)
+
+
+_IMAGE = _descriptor.Descriptor(
+  name='Image',
+  full_name='Image',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='image_data', full_name='Image.image_data', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=705,
+  serialized_end=732,
+)
+
+
+_AUDIO = _descriptor.Descriptor(
+  name='Audio',
+  full_name='Audio',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='audio_data', full_name='Audio.audio_data', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"",
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='sample_rate', full_name='Audio.sample_rate', index=1,
+      number=2, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='num_channels', full_name='Audio.num_channels', index=2,
+      number=3, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='audio_encoding', full_name='Audio.audio_encoding', index=3,
+      number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=b"".decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=734,
+  serialized_end=828,
+)
+
+_SECONDARYDATA.fields_by_name['image'].message_type = _IMAGE
+_SECONDARYDATA.fields_by_name['audio'].message_type = _AUDIO
+_SECONDARYDATA.oneofs_by_name['_image'].fields.append(
+  _SECONDARYDATA.fields_by_name['image'])
+_SECONDARYDATA.fields_by_name['image'].containing_oneof = _SECONDARYDATA.oneofs_by_name['_image']
+_SECONDARYDATA.oneofs_by_name['_audio'].fields.append(
+  _SECONDARYDATA.fields_by_name['audio'])
+_SECONDARYDATA.fields_by_name['audio'].containing_oneof = _SECONDARYDATA.oneofs_by_name['_audio']
 DESCRIPTOR.message_types_by_name['AudioImgRequest'] = _AUDIOIMGREQUEST
 DESCRIPTOR.message_types_by_name['AudioImgResponse'] = _AUDIOIMGRESPONSE
 DESCRIPTOR.message_types_by_name['TextChunk'] = _TEXTCHUNK
 DESCRIPTOR.message_types_by_name['ImageStreamRequest'] = _IMAGESTREAMREQUEST
 DESCRIPTOR.message_types_by_name['FaceBoundingBox'] = _FACEBOUNDINGBOX
+DESCRIPTOR.message_types_by_name['SecondaryData'] = _SECONDARYDATA
+DESCRIPTOR.message_types_by_name['Image'] = _IMAGE
+DESCRIPTOR.message_types_by_name['Audio'] = _AUDIO
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 AudioImgRequest = _reflection.GeneratedProtocolMessageType('AudioImgRequest', (_message.Message,), {
@@ -361,6 +513,27 @@ FaceBoundingBox = _reflection.GeneratedProtocolMessageType('FaceBoundingBox', (_
   })
 _sym_db.RegisterMessage(FaceBoundingBox)
 
+SecondaryData = _reflection.GeneratedProtocolMessageType('SecondaryData', (_message.Message,), {
+  'DESCRIPTOR' : _SECONDARYDATA,
+  '__module__' : 'grpc_pb2'
+  # @@protoc_insertion_point(class_scope:SecondaryData)
+  })
+_sym_db.RegisterMessage(SecondaryData)
+
+Image = _reflection.GeneratedProtocolMessageType('Image', (_message.Message,), {
+  'DESCRIPTOR' : _IMAGE,
+  '__module__' : 'grpc_pb2'
+  # @@protoc_insertion_point(class_scope:Image)
+  })
+_sym_db.RegisterMessage(Image)
+
+Audio = _reflection.GeneratedProtocolMessageType('Audio', (_message.Message,), {
+  'DESCRIPTOR' : _AUDIO,
+  '__module__' : 'grpc_pb2'
+  # @@protoc_insertion_point(class_scope:Audio)
+  })
+_sym_db.RegisterMessage(Audio)
+
 
 
 _MEDIASERVICE = _descriptor.ServiceDescriptor(
@@ -370,8 +543,8 @@ _MEDIASERVICE = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_start=595,
-  serialized_end=881,
+  serialized_start=831,
+  serialized_end=1117,
   methods=[
   _descriptor.MethodDescriptor(
     name='SendAudioImg',
