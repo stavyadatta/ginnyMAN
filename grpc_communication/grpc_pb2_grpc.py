@@ -37,7 +37,7 @@ class MediaServiceStub(object):
                 )
         self.SecondaryChannel = channel.unary_unary(
                 '/MediaService/SecondaryChannel',
-                request_serializer=grpc__pb2.AudioImgRequest.SerializeToString,
+                request_serializer=grpc__pb2.SecondaryData.SerializeToString,
                 response_deserializer=grpc__pb2.TextChunk.FromString,
                 )
 
@@ -105,7 +105,7 @@ def add_MediaServiceServicer_to_server(servicer, server):
             ),
             'SecondaryChannel': grpc.unary_unary_rpc_method_handler(
                     servicer.SecondaryChannel,
-                    request_deserializer=grpc__pb2.AudioImgRequest.FromString,
+                    request_deserializer=grpc__pb2.SecondaryData.FromString,
                     response_serializer=grpc__pb2.TextChunk.SerializeToString,
             ),
     }
@@ -198,7 +198,7 @@ class MediaService(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/MediaService/SecondaryChannel',
-            grpc__pb2.AudioImgRequest.SerializeToString,
+            grpc__pb2.SecondaryData.SerializeToString,
             grpc__pb2.TextChunk.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

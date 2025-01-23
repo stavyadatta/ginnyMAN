@@ -16,7 +16,7 @@ service MediaService {
     rpc GetBbox(google.protobuf.Empty) returns (FaceBoundingBox);
 
     // Secondary channel request
-    rpc SecondaryChannel(AudioImgRequest) returns (TextChunk);
+    rpc SecondaryChannel(SecondaryData) returns (TextChunk);
 }
 
 // Message for sending both image and audio data
