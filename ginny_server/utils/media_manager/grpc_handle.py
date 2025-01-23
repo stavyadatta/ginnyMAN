@@ -1,5 +1,6 @@
 import os
 import cv2
+import json
 import time
 import wave
 import traceback
@@ -9,6 +10,8 @@ from google.protobuf.empty_pb2 import Empty
 from core_api import FaceRecognition
 from grpc_pb2 import AudioImgResponse, TextChunk, FaceBoundingBox
 from grpc_pb2_grpc import MediaServiceServicer
+
+from secondary_channel import SecondaryChannel
 
 IMAGE_QUEUE_LEN = 50
 
@@ -175,5 +178,29 @@ class MediaManager(MediaServiceServicer):
         return face_bbox
     
     def SecondaryChannel(self, request, context):
-        pass
+        try:
+            api_task = json.loads(request.api_task)
+            if request.HasField("image"):
+                image_bytes = request.image.image_data
+                image = self._decode_image_from_bytes(image_bytes)
+                response = SecondaryChannel(img=image, api_task=api_task)
+                is_final = False
+                if response.mode == 'done':
+                    is_final = True
+                elif response.mode == 'not done':
+                    is_final = False
+                return TextChunk(
+                    text=response.textchunk,
+                    is_final=is_final,
+                    mode='default'
+                )
+        except Exception as e:
+            error_trace = traceback.format_exc()
+            print("Error occurred while processing data: {}".format(error_trace))
+
+            return TextChunk(
+                text="error",
+                is_final=True,
+                mode='error'
+            )
 
