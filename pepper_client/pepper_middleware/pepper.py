@@ -180,7 +180,7 @@ class Pepper():
                 image_format="JPEG",
                 image_width=width,
                 image_height=height,
-                image_description="Captured Pepper"
+                api_task="Captured Pepper"
             )
 
             # Send the request to the gRPC server
