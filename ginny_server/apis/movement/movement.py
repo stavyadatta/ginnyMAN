@@ -36,7 +36,7 @@ class _Movement(ApiBase):
         response = ChatGPT.send_text_get_json(total_prompt, stream=False)
 
         print(response.choices[0].message.content)
-        yield ApiObject(response.choices[0].message.content, movement=True) 
+        yield ApiObject(response.choices[0].message.content, mode='default') 
 
         llm_response = response.choices[0].message.content
         # for chunk in response:

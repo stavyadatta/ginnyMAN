@@ -160,13 +160,13 @@ class Pepper():
             traceback.print_exc()
 
 
-    def send_audio(self):
+    def send_audio_video(self):
         audio_data, sample_rate = self.get_audio()
         try:
             last_frame = self.make_img_compatible()
         except TypeError:
             print("Send audio was not receiving last frame")
-            self.send_audio()
+            self.send_audio_video()
         try:
             height, width, _ = last_frame.shape
             _, image_data = cv2.imencode(".jpg", last_frame)
@@ -194,7 +194,7 @@ class Pepper():
         except UnboundLocalError as e:
             print("Unbounded local error occuring")
             traceback.print_exc()
-            self.send_audio()
+            self.send_audio_video()
 
     def receive_llm_response(self):
         speech_processor = SpeechProcessor(self.speech_manager.say)
@@ -259,7 +259,7 @@ if __name__ == "__main__":
     
     try:
         while True:
-            p.send_audio()
+            p.send_audio_video()
             p.receive_llm_response()
     except KeyboardInterrupt:
         p.close()

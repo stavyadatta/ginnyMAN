@@ -101,6 +101,7 @@ You are an agent programmed to respond strictly according to the following rules
 4. If the user provides no input or says "You" or "Thank you", respond with "bad input". Use it sparingly
 5. If the user asks to raise an arm, respond with "movement".
 6. For any other input or scenario, respond with "no change".
+7. If any user asks you to find objects then respond with "object find"
 Examples under the delimitters
 input: Hey how are you doing 
 response: no change
@@ -173,6 +174,16 @@ response: movement
 
 input: can you give a high five
 response: movement
+
+input: Hey can you find phone for me
+response: object find
+
+input: Find sunglasses
+response: object find
+
+input: Could you find my laptop
+response: object find
+
 ```
 Strictly follow these rules and provide no additional explanation or context in your responses.
 """
