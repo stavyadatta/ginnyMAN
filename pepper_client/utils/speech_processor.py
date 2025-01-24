@@ -6,6 +6,7 @@ import grpc
 from collections import deque
 
 from movement import MovementManager
+from secondary_communication import SecondaryCommunication
 
 def is_valid_json(text):
     try:
@@ -58,10 +59,12 @@ class SpeechProcessor:
             if self.sentence_queue:
                 sentence_tuple = self.sentence_queue.popleft()
                 sentence_to_say = sentence_tuple[0]
+                mode = sentence_tuple[1]
                 if not is_valid_json(sentence_to_say):
                     self.speech_function(sentence_to_say)
                 else:
                     print("Is it coming for the valid movement manager \n \n \n")
-                    MovementManager(sentence_to_say, pepper)
-
-
+                    if mode != "default":
+                        SecondaryCommunication(sentence_to_say, mode, pepper)
+                    else:
+                        MovementManager(sentence_to_say, pepper)

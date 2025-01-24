@@ -17,7 +17,8 @@ class _ObjectLookup(BaseSecondaryApi):
         YOLODetector.set_classes([object_name])
         output = YOLODetector.detect_objects(img)
         if len(output) == 0:
-            return ApiObject(mode="not done")
+            empty_bbox = {'bbox': ""}
+            return ApiObject(textchunk=empty_bbox, mode="not done")
         
         bbox = output[0].get('bounding_box')
         bbox_dict = {'bbox': bbox}
