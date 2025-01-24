@@ -17,10 +17,8 @@ class _FaceRecognition:
     - Loads existing face embeddings from a database folder.
     - Detects faces and generates embeddings for images provided as numpy arrays.
     - Compares the generated embedding against known embeddings using cosine similarity.
-    - If no match is found (based on a threshold), it saves the new face into the database.
-    
-    GPU usage:
-    - By default, attempts to use GPU if available for both detection and embedding.
+    - If no match is found (based on a threshold), it can save the new face into the database
+      (but only when explicitly instructed, not by default).
     """
 
     def __init__(self, 
@@ -31,11 +29,9 @@ class _FaceRecognition:
         Initialize the FaceRecognition class.
 
         Args:
-            db_dir (str): Directory path for face database. Defaults to './face_db'.
-            model_name (str): InsightFace model name. Defaults to 'buffalo_l'.
+            db_dir (str): Directory path for face database.
+            model_name (str): InsightFace model name.
             recognition_threshold (float): Threshold for considering a face as known.
-                                            Lower means stricter matching.
-                                            Default is 0.3.
         """
         self.db_dir = Path(db_dir)
         self.recognition_threshold = recognition_threshold
@@ -50,89 +46,15 @@ class _FaceRecognition:
         # Load database embeddings
         self.known_ids, self.known_embeddings = self._load_database()
 
-    def get_face_box(self, img: np.ndarray) -> Optional[Tuple[int, int, int, int]]:
-        """
-        Detect the face in the image and return the bounding box.
-
-        Args:
-            img (np.ndarray): The input image array (e.g., from cv2.imread).
-
-        Returns:
-            Optional[Tuple[int, int, int, int]]: Bounding box (x, y, w, h) if a face is detected, else None.
-        """
-        bboxes, _ = self.app.det_model.detect(img, max_num=0, metric='default')
-        if bboxes.shape[0] == 0:
-            # logging.warning("No person found")
-            return None
-
-        first_bbox = bboxes[0, 0:4].astype(int)
-        return tuple(first_bbox)
-
-    def single_img(self, img: np.ndarray) -> str:
-        """
-        Recognize the face in the given image (as a numpy array).
-
-        Steps:
-        - Generate embedding for the face in the image.
-        - Compare with known embeddings using cosine similarity.
-        - If a match is found above the threshold, return the known face ID.
-        - Else, save this face as a new ID.
-
-        Args:
-            img (np.ndarray): The input image array (e.g., from cv2.imread).
-
-        Returns:
-            str: The ID of the recognized face or the newly assigned ID.
-        """
-        embedding = self._get_embedding(img)
-        face_id = self._match_face(embedding)
-
-        if face_id is None:
-            face_id = self._save_new_face(embedding, img, save_img=True)
-
-        return face_id
-
-    def get_most_frequent_face_id(self, image_queue: deque):
-        if len(image_queue) == 0:
-            logging.warning("No image queue")
-            raise Exception("There are no images in the image queue")
-        
-        recent_images = list(image_queue)[-10:]
-        face_ids = []
-
-        for image in recent_images:
-            try:
-                face_id = self.single_img(image)
-                face_ids.append(face_id)
-            except ValueError as e:
-                logging.warning("No face found in one of the images ", e)
-
-        if face_ids:
-            most_frequent_id = max(set(face_ids), key=face_ids.count)
-            logging.info(f"The most frequent id is {most_frequent_id}")
-            return most_frequent_id
-        else:
-            logging.info("No face detected in the last 10 images")
-            return None
-        
-
     def _ensure_db_directory(self):
-        """
-        Ensure that the database directory exists.
-        If not, create it.
-        """
+        """Ensure that the database directory exists."""
         if not self.db_dir.exists():
             self.db_dir.mkdir(parents=True, exist_ok=True)
 
     def _initialize_face_analysis(self) -> FaceAnalysis:
-        """
-        Initialize the InsightFace FaceAnalysis object and load models.
-        Attempt to use GPU if available.
-
-        Returns:
-            FaceAnalysis: The initialized and prepared face analysis object.
-        """
-        providers = [('CUDAExecutionProvider', {"device_id": 2}), 'CPUExecutionProvider'] if torch.cuda.is_available() else ['CPUExecutionProvider']
+        """Initialize the InsightFace FaceAnalysis object and load models."""
+        providers = [('CUDAExecutionProvider', {"device_id": 2}), 'CPUExecutionProvider'] \
+            if torch.cuda.is_available() else ['CPUExecutionProvider']
         app = FaceAnalysis(name=self.model_name, providers=providers)
         app.prepare(ctx_id=0 if torch.cuda.is_available() else -1)
         return app
@@ -169,7 +91,7 @@ class _FaceRecognition:
             img (np.ndarray): The image array.
 
         Returns:
-            np.ndarray: The face embedding vector.
+            np.ndarray: The face embedding vector of shape (1, embedding_dim).
         """
         faces = self.app.get(img)
         if len(faces) == 0:
@@ -180,7 +102,7 @@ class _FaceRecognition:
         embedding = embedding.reshape(1, -1)  # shape: (1, embedding_dim)
         return embedding
 
-    def _match_face(self, embedding: np.ndarray) -> str:
+    def _match_face(self, embedding: np.ndarray) -> Optional[str]:
         """
         Match the given embedding against known embeddings.
 
@@ -188,7 +110,7 @@ class _FaceRecognition:
             embedding (np.ndarray): The face embedding to match.
 
         Returns:
-            str: The matched face ID if found, otherwise None.
+            Optional[str]: The matched face ID if found, otherwise None.
         """
         if self.known_embeddings.size == 0:
             return None
@@ -198,17 +120,17 @@ class _FaceRecognition:
         best_match_idx = np.argmax(sim)
         best_score = sim[0, best_match_idx]
 
-        # Threshold check: similarity close to 1 means more similar
-        # Using threshold: if sim is high enough (1 - threshold), consider matched
+        # Threshold check (closer to 1 is more similar)
+        # We interpret "recognition_threshold" as the maximum distance from 1 
+        # allowed. i.e. if best_score >= (1 - threshold) => recognized
         if best_score >= (1 - self.recognition_threshold):
             return self.known_ids[best_match_idx]
         else:
-            print("Did not match score of ", best_score)
             return None
 
-    def _save_new_face(self, embedding: np.ndarray, img: np.ndarray, save_img=False) -> str:
+    def _save_new_face(self, embedding: np.ndarray, img: np.ndarray, save_img=True) -> str:
         """
-        Save a new face to the database.
+        Save a new face to the database (embedding and optionally the face image).
 
         Returns:
             str: The ID of the newly saved face.
@@ -219,15 +141,18 @@ class _FaceRecognition:
         # Save embedding to disk
         np.save(self.db_dir / f"{new_id}.npy", embedding)
 
-        # Update known faces
+        # Update known faces in memory
         self.known_ids.append(new_id)
         if self.known_embeddings.size == 0:
             self.known_embeddings = embedding
         else:
             self.known_embeddings = np.vstack([self.known_embeddings, embedding])
         
+        # Optionally save the face image
         if save_img:
-            cv2.imwrite(str((self.db_dir / f"{new_id}.png").absolute()), img)
+            out_path = self.db_dir / f"{new_id}.png"
+            cv2.imwrite(str(out_path), img)
+
         return new_id
 
     def _generate_new_face_id(self) -> str:
@@ -237,44 +162,104 @@ class _FaceRecognition:
         Returns:
             str: A new face ID, for example 'face_1', 'face_2', etc.
         """
-        current_ids = [int(x.replace("face_", "")) for x in self.known_ids if x.startswith("face_")]
+        current_ids = [int(x.replace("face_", "")) 
+                       for x in self.known_ids if x.startswith("face_")]
         next_id_num = (max(current_ids) + 1) if current_ids else 1
         return f"face_{next_id_num}"
 
-if __name__ == "__main__":
-    # Initialize the FaceRecognition system
-    face_recognition = _FaceRecognition()
+    ############################################################################
+    #               Key Changes: Separate "recognize" vs. "enroll"             #
+    ############################################################################
+    def recognize_face_no_enroll(self, img: np.ndarray) -> Tuple[Optional[str], np.ndarray]:
+        """
+        Attempt to recognize the face in the image but DO NOT enroll new faces.
+        This method returns the recognized ID (or None if unknown) AND the embedding.
 
-    # Load the first image and save its face
-    img1_path = "/workspace/database/stavya_imgs/20240325_135719.jpg"
-    img1 = cv2.imread(img1_path)
-    if img1 is None:
-        raise ValueError(f"Image not found: {img1_path}")
-    print(f"Processing the first image: {img1_path}")
-    face_id_1 = face_recognition.recognize_face(img1)
-    print(f"Saved face ID for the first image: {face_id_1}")
+        Returns:
+            (face_id, embedding)
+        """
+        embedding = self._get_embedding(img)
+        face_id = self._match_face(embedding)
+        return face_id, embedding
 
-    # Load the second image and compare
-    img2_path = "/workspace/database/stavya_imgs/20240701_122416.jpg"
-    img2 = cv2.imread(img2_path)
-    if img2 is None:
-        raise ValueError(f"Image not found: {img2_path}")
-    print(f"Processing the second image: {img2_path}")
-    face_id_2 = face_recognition.recognize_face(img2)
-    if face_id_1 == face_id_2:
-        print("The second image matches the face from the first image.")
-    else:
-        print("The second image does not match the face from the first image.")
+    def enroll_face(self, embedding: np.ndarray, img: np.ndarray) -> str:
+        """
+        Explicitly enroll a new face into the database using the given embedding and image.
 
-    # Load the third image and compare
-    img3_path = "/workspace/database/rob_imgs/IMG-20200411-WA0008.jpeg"
-    img3 = cv2.imread(img3_path)
-    if img3 is None:
-        raise ValueError(f"Image not found: {img3_path}")
-    print(f"Processing the third image: {img3_path}")
-    face_id_3 = face_recognition.recognize_face(img3)
-    if face_id_1 == face_id_3:
-        print("The third image matches the face from the first image.")
-    else:
-        print("The third image does not match the face from the first image.")
+        Returns:
+            str: the newly generated face ID
+        """
+        return self._save_new_face(embedding, img, save_img=True)
+
+    ############################################################################
+    #            Modified method that does the voting over 10 frames           #
+    ############################################################################
+
+    def get_most_frequent_face_id(self, image_queue: deque) -> Optional[str]:
+        """
+        Process up to the last 10 images in the queue, attempt to recognize each face
+        WITHOUT immediately enrolling any new face. If the final "winner" is None or
+        if None-count is strictly greater than the most frequent recognized ID count,
+        then enroll as a new face.
+
+        Returns:
+            Optional[str]: The most frequent recognized face ID or a newly enrolled ID.
+        """
+        if len(image_queue) == 0:
+            logging.warning("No image queue")
+            raise Exception("There are no images in the image queue")
+        
+        recent_images = list(image_queue)[-10:]
+        face_ids = []
+        embeddings = []
+
+        # 1) Recognize (but do NOT enroll yet)
+        for img in recent_images:
+            try:
+                recognized_id, emb = self.recognize_face_no_enroll(img)
+                face_ids.append(recognized_id)
+                embeddings.append(emb)
+            except ValueError as e:
+                # No face found in this image
+                logging.warning(f"No face found in one of the images: {e}")
+                face_ids.append(None)
+                embeddings.append(None)
+
+        # 2) Count how often each ID appears, plus how many are None
+        from collections import Counter
+        counter = Counter(face_ids)  # e.g., {face_1: 3, face_2: 1, None: 6}
+        none_count = counter[None]
+        del counter[None]  # remove None from the recognized-IDs dict if it exists
+
+        if len(counter) == 0:
+            # There were no recognized IDs at all => everything was None
+            most_frequent_id = None
+            max_freq = 0
+        else:
+            # Identify the recognized ID with the highest frequency
+            most_frequent_id, max_freq = max(counter.items(), key=lambda x: x[1])  # e.g. ("face_1", 3)
+
+        # 3) If the number of None is strictly greater than the max recognized frequency,
+        #    treat the result as "new/unknown" face.
+        if none_count > max_freq:
+            logging.info(f"None-count ({none_count}) > recognized-count ({max_freq}). "
+                        "Treating as new face.")
+            most_frequent_id = None
+
+        # 4) If the final voted ID is None => truly unknown => we enroll as new face
+        if most_frequent_id is None:
+            # Enroll a new face from one of the unknown instances (e.g., the last unknown)
+            for i in reversed(range(len(face_ids))):
+                if face_ids[i] is None and embeddings[i] is not None:
+                    new_face_id = self.enroll_face(embeddings[i], recent_images[i])
+                    logging.info(f"No known face found in the last 10 images. "
+                                f"Enrolled new face: {new_face_id}")
+                    return new_face_id
+            # If we never found a valid unknown embedding, just return None
+            return None
+
+        # 5) Otherwise, return the recognized majority face
+        logging.info(f"Most frequent recognized ID is: {most_frequent_id} "
+                    f"(count={max_freq}, none_count={none_count})")
+        return most_frequent_id
 
