@@ -2,6 +2,11 @@ syntax = "proto3";
 
 import "google/protobuf/empty.proto";
 
+service SecondaryChannel {
+    // Secondary channel request moved here
+    rpc Secondary_media_manager(SecondaryData) returns (TextChunk);
+}
+
 service MediaService {
     // RPC method to send audio and image data together
     rpc SendAudioImg(AudioImgRequest) returns (AudioImgResponse);
@@ -15,8 +20,6 @@ service MediaService {
     // RPC method to get face detections bboxes
     rpc GetBbox(google.protobuf.Empty) returns (FaceBoundingBox);
 
-    // Secondary channel request
-    rpc SecondaryChannel(SecondaryData) returns (TextChunk);
 }
 
 // Message for sending both image and audio data

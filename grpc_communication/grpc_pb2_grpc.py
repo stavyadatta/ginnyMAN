@@ -6,6 +6,68 @@ from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 import grpc_pb2 as grpc__pb2
 
 
+class SecondaryChannelStub(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def __init__(self, channel):
+        """Constructor.
+
+        Args:
+            channel: A grpc.Channel.
+        """
+        self.Secondary_media_manager = channel.unary_unary(
+                '/SecondaryChannel/Secondary_media_manager',
+                request_serializer=grpc__pb2.SecondaryData.SerializeToString,
+                response_deserializer=grpc__pb2.TextChunk.FromString,
+                )
+
+
+class SecondaryChannelServicer(object):
+    """Missing associated documentation comment in .proto file."""
+
+    def Secondary_media_manager(self, request, context):
+        """Secondary channel request moved here
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+
+def add_SecondaryChannelServicer_to_server(servicer, server):
+    rpc_method_handlers = {
+            'Secondary_media_manager': grpc.unary_unary_rpc_method_handler(
+                    servicer.Secondary_media_manager,
+                    request_deserializer=grpc__pb2.SecondaryData.FromString,
+                    response_serializer=grpc__pb2.TextChunk.SerializeToString,
+            ),
+    }
+    generic_handler = grpc.method_handlers_generic_handler(
+            'SecondaryChannel', rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler,))
+
+
+ # This class is part of an EXPERIMENTAL API.
+class SecondaryChannel(object):
+    """Missing associated documentation comment in .proto file."""
+
+    @staticmethod
+    def Secondary_media_manager(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/SecondaryChannel/Secondary_media_manager',
+            grpc__pb2.SecondaryData.SerializeToString,
+            grpc__pb2.TextChunk.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+
 class MediaServiceStub(object):
     """Missing associated documentation comment in .proto file."""
 
@@ -34,11 +96,6 @@ class MediaServiceStub(object):
                 '/MediaService/GetBbox',
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
                 response_deserializer=grpc__pb2.FaceBoundingBox.FromString,
-                )
-        self.SecondaryChannel = channel.unary_unary(
-                '/MediaService/SecondaryChannel',
-                request_serializer=grpc__pb2.SecondaryData.SerializeToString,
-                response_deserializer=grpc__pb2.TextChunk.FromString,
                 )
 
 
@@ -73,13 +130,6 @@ class MediaServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def SecondaryChannel(self, request, context):
-        """Secondary channel request
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
 
 def add_MediaServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -102,11 +152,6 @@ def add_MediaServiceServicer_to_server(servicer, server):
                     servicer.GetBbox,
                     request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                     response_serializer=grpc__pb2.FaceBoundingBox.SerializeToString,
-            ),
-            'SecondaryChannel': grpc.unary_unary_rpc_method_handler(
-                    servicer.SecondaryChannel,
-                    request_deserializer=grpc__pb2.SecondaryData.FromString,
-                    response_serializer=grpc__pb2.TextChunk.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -183,22 +228,5 @@ class MediaService(object):
         return grpc.experimental.unary_unary(request, target, '/MediaService/GetBbox',
             google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             grpc__pb2.FaceBoundingBox.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def SecondaryChannel(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/MediaService/SecondaryChannel',
-            grpc__pb2.SecondaryData.SerializeToString,
-            grpc__pb2.TextChunk.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
