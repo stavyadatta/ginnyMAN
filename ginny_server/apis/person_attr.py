@@ -1,4 +1,4 @@
-from .api_object import ApiObject
+from utils import ApiObject
 from .api_base import ApiBase
 
 from utils import PersonDetails, Neo4j, message_format

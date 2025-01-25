@@ -4,7 +4,6 @@ from .silent import _Silent
 from .person_attr import _PersonAttribute
 from .bad_input import _BadInput
 from .movement import _Movement
-from .api_object import ApiObject
 from .secondary_channel import _SecondaryChannel
 
 Speaking = _Speaking()
@@ -23,4 +22,4 @@ api_call: dict[str, ApiBase] = {
     "object find": SecondaryChannel
 }
 
-__all__ = ["api_call", "ApiObject"]
+__all__ = ["api_call"]

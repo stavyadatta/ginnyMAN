@@ -1,7 +1,7 @@
 import random
 
-from .api_object import ApiObject
-from utils import Neo4j
+from utils import Neo4j, ApiObject
+
 from .api_base import ApiBase
 
 hmm_variations = [

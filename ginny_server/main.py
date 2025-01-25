@@ -8,6 +8,7 @@ from threading import Thread
 
 from core_api import FaceRecognition, WhisperSpeech2Text
 from utils import MediaManager, IMAGE_QUEUE_LEN
+from secondary_channel import SecondaryGRPC
 from executor import Executor
 from reasoner import Reasoner
 import grpc_communication.grpc_pb2 as pb2
@@ -85,6 +86,10 @@ def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     pb2_grpc.add_MediaServiceServicer_to_server(
         MediaManager(audio_img_queue, llama_response_queue, image_queue), 
+        server
+    )
+    pb2_grpc.add_SecondaryChannelServicer_to_server(
+        SecondaryGRPC(),
         server
     )
     server.add_insecure_port("[::]:50051")

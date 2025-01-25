@@ -177,26 +177,3 @@ class MediaManager(MediaServiceServicer):
 
         return face_bbox
     
-    def SecondaryChannel(self, request, context):
-        try:
-            api_task = json.loads(request.api_task)
-            if request.HasField("image"):
-                image_bytes = request.image.image_data
-                image = self._decode_image_from_bytes(image_bytes)
-                response = SecondaryChannel(img=image, api_task=api_task)
-                mode = response.mode
-                return TextChunk(
-                    text=response.textchunk,
-                    is_final=False,
-                    mode=mode
-                )
-        except Exception as e:
-            error_trace = traceback.format_exc()
-            print("Error occurred while processing data: {}".format(error_trace))
-
-            return TextChunk(
-                text="error",
-                is_final=True,
-                mode='error'
-            )
-

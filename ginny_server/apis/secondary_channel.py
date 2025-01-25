@@ -1,8 +1,8 @@
-from .api_object import ApiObject
+from utils import PersonDetails, Neo4j, message_format, ApiObject
+from core_api import ChatGPT
+
 from .api_base import ApiBase
 
-from utils import PersonDetails, Neo4j, message_format
-from core_api import ChatGPT
 
 class _SecondaryChannel(ApiBase):
     def __init__(self):

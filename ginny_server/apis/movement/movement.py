@@ -1,8 +1,7 @@
 from typing import Any
 
 from core_api import ChatGPT, Llama, Grok
-from ..api_object import ApiObject
-from ginny_server.utils import PersonDetails, Neo4j, message_format
+from utils import PersonDetails, Neo4j, message_format, ApiObject
 
 from .prompt import movement_prompt
 from ..api_base import ApiBase

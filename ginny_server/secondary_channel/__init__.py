@@ -1,5 +1,3 @@
-from .secondary_channel import _SecondaryChannel
+from .seconday_grpc import SecondaryGRPC
 
-SecondaryChannel = _SecondaryChannel()
-
-__all__ = ["SecondaryChannel"]
+__all__ = ["SecondaryGRPC"]
