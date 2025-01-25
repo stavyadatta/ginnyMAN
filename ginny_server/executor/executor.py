@@ -1,4 +1,6 @@
-from apis import api_call
+from typing import Iterator
+
+from apis import api_call, ApiObject
 from utils import PersonDetails
 
 from difflib import SequenceMatcher
@@ -34,7 +36,7 @@ class _Executor():
     def __init__(self):
         pass
 
-    def __call__(self, person_details: PersonDetails):
+    def __call__(self, person_details: PersonDetails) -> Iterator[ApiObject]:
         state = str(person_details.get_attribute("state"))
 
         best_key = find_best_match(state, api_call.keys())

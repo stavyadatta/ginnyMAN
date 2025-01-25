@@ -23,4 +23,4 @@ api_call: dict[str, ApiBase] = {
     "object find": SecondaryChannel
 }
 
-__all__ = ["api_call"]
+__all__ = ["api_call", "ApiObject"]

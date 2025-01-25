@@ -49,5 +49,3 @@ class _Movement(ApiBase):
         person_details.add_message(llm_dict)
         person_details.set_attribute("state", "speak")
         Neo4j.add_message_to_person(person_details)
-
-
