@@ -10,8 +10,7 @@ LEFT_LIMIT = -100
 RIGHT_LIMIT = 100
 
 class _ObjectLookup(BaseSecondaryCommunication):
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self):
         self.current_head_pitch = 0.0
         self.current_head_yaw = 0.0
         self.seen_all = False
@@ -75,8 +74,8 @@ class _ObjectLookup(BaseSecondaryCommunication):
                 image=image_grpc
             )
             try:
-                response = self.stub.SecondaryChannel(secondary_data)
-                keep_going = self.is_object_found(response)
+                response = self.secondary_stub.Secondary_media_manager(secondary_data)
+                keep_going = not self.is_object_found(response)
                 
             except grpc.RpcError as e:
                 print("gRPC in sending audio error: {} - " \

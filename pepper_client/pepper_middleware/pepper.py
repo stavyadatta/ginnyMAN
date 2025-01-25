@@ -15,7 +15,7 @@ from google.protobuf.empty_pb2 import Empty
 
 
 from grpc_communication.grpc_pb2 import AudioImgRequest, ImageStreamRequest
-from grpc_communication.grpc_pb2_grpc import MediaServiceStub
+from grpc_communication.grpc_pb2_grpc import MediaServiceStub, SecondaryChannelStub
 from pepper_api import CameraManager, AudioManager2, HeadManager, EyeLEDManager, \
     SpeechManager, ArmManager
 from utils import SpeechProcessor
@@ -25,8 +25,9 @@ logging.basicConfig(filename="app.log", level=logging.INFO, format='%(asctime)s 
 logger = logging.getLogger(__name__)
 
 class Pepper():
-    def __init__(self, pepper_connection_url, stub):
+    def __init__(self, pepper_connection_url, stub, secondary_stub):
         self.stub = stub
+        self.secondary_stub = secondary_stub
 
         app = qi.Application(["AudioManager2", "--qi-url=" + pepper_connection_url])
         app.start()
@@ -247,8 +248,9 @@ if __name__ == "__main__":
     
     channel = grpc.insecure_channel("172.27.72.27:50051")
     stub = MediaServiceStub(channel)
+    secondary_stub = SecondaryChannelStub(channel)
 
-    p = Pepper(pepper_connection_url, stub)
+    p = Pepper(pepper_connection_url, stub, secondary_stub)
     image_thread = Thread(target=p.capture_and_stream_images, args=()) 
     image_thread.daemon = True
     image_thread.start()

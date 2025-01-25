@@ -1,7 +1,7 @@
 import json
 
 class BaseSecondaryCommunication():
-    def __init__(self) -> None:
+    def __init__(self):
         pass
 
 
@@ -21,4 +21,5 @@ class BaseSecondaryCommunication():
     def __call__(self, secondary_details, pepper):
         self.pepper = pepper
         self.stub = pepper.stub
+        self.secondary_stub = pepper.secondary_stub 
         
