@@ -20,6 +20,9 @@ service MediaService {
     // RPC method to get face detections bboxes
     rpc GetBbox(google.protobuf.Empty) returns (FaceBoundingBox);
 
+    // RPC method to clear out the llama and image queue
+    rpc ClearQueue(google.protobuf.Empty) returns (QueueRemoval);
+
 }
 
 // Message for sending both image and audio data
@@ -48,6 +51,11 @@ message TextChunk {
     string text = 1;              // Chunk of transcribed/generated text
     bool is_final = 2;            // Indicates if this is the final chunk
     string mode = 3;
+}
+
+// Message to confirm the removal of queue
+message QueueRemoval {
+  bool removed = 1;
 }
 
 // Message for streaming images

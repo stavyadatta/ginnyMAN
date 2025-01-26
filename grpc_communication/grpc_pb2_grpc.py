@@ -97,6 +97,11 @@ class MediaServiceStub(object):
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
                 response_deserializer=grpc__pb2.FaceBoundingBox.FromString,
                 )
+        self.ClearQueue = channel.unary_unary(
+                '/MediaService/ClearQueue',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=grpc__pb2.QueueRemoval.FromString,
+                )
 
 
 class MediaServiceServicer(object):
@@ -130,6 +135,13 @@ class MediaServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ClearQueue(self, request, context):
+        """RPC method to clear out the llama and image queue
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_MediaServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -152,6 +164,11 @@ def add_MediaServiceServicer_to_server(servicer, server):
                     servicer.GetBbox,
                     request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                     response_serializer=grpc__pb2.FaceBoundingBox.SerializeToString,
+            ),
+            'ClearQueue': grpc.unary_unary_rpc_method_handler(
+                    servicer.ClearQueue,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    response_serializer=grpc__pb2.QueueRemoval.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -228,5 +245,22 @@ class MediaService(object):
         return grpc.experimental.unary_unary(request, target, '/MediaService/GetBbox',
             google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             grpc__pb2.FaceBoundingBox.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ClearQueue(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/MediaService/ClearQueue',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            grpc__pb2.QueueRemoval.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
