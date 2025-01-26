@@ -1,5 +1,6 @@
 import os
 import cv2
+import queue
 import json
 import time
 import wave
@@ -8,7 +9,7 @@ import numpy as np
 from google.protobuf.empty_pb2 import Empty
 
 from core_api import FaceRecognition
-from grpc_pb2 import AudioImgResponse, TextChunk, FaceBoundingBox
+from grpc_pb2 import AudioImgResponse, TextChunk, FaceBoundingBox, QueueRemoval
 from grpc_pb2_grpc import MediaServiceServicer
 
 IMAGE_QUEUE_LEN = 50
@@ -175,3 +176,21 @@ class MediaManager(MediaServiceServicer):
 
         return face_bbox
     
+    def ClearQueue(self, request, context):
+        def empty_queue(q):
+            try:
+                while not q.empty():
+                    q.get()
+                    q.task_done()
+            except Exception as e:
+                print("Error while removing the queue ", e)
+                return QueueRemoval(
+                    removed=False
+                )
+
+        empty_queue(self.audio_img_queue)
+        empty_queue(self.llama_response_queue)
+
+        return QueueRemoval(
+            removed=True
+        )
