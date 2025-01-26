@@ -20,9 +20,11 @@ class _ObjectLookup(BaseSecondaryCommunication):
         self.object_name = ""
 
     def move_head(self, speed=0.1):
+        no_movement_needed = False
         if self.seen_all:
             print('Has seen everything')
-            return
+            no_movement_needed = True
+            return no_movement_needed
 
         if not self.moving_right:
             new_position = self.head_position - 10
@@ -46,11 +48,12 @@ class _ObjectLookup(BaseSecondaryCommunication):
 
         angle_in_radians = self.head_position * motion.TO_RAD
         self.pepper.head_manager.rotate_head(left=float(angle_in_radians))
+        return no_movement_needed
 
     def is_object_found(self, response):
         if response.mode == "not done":
-            self.move_head()
-            return False
+            no_movement_possible = self.move_head()
+            return no_movement_possible
         elif response.mode == "done":
             self.pepper.speech_manager.say("Found the {}".format(self.object_name))
             return True
@@ -83,5 +86,5 @@ class _ObjectLookup(BaseSecondaryCommunication):
                 print("gRPC in sending audio error: {} - " \
                 "{}".format(e.code(), e.details()))
         print("Outside keep going now")
-        self.pepper.head_manager.rotate_head()
+        self.pepper.head_manager.rotate_head_abs()
         return
