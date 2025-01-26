@@ -1,3 +1,3 @@
-from .seconday_grpc import SecondaryGRPC
+from .secondary_grpc import SecondaryGRPC
 
 __all__ = ["SecondaryGRPC"]

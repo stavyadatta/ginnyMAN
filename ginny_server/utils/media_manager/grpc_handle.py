@@ -11,8 +11,6 @@ from core_api import FaceRecognition
 from grpc_pb2 import AudioImgResponse, TextChunk, FaceBoundingBox
 from grpc_pb2_grpc import MediaServiceServicer
 
-from secondary_channel import SecondaryChannel
-
 IMAGE_QUEUE_LEN = 50
 
 class MediaManager(MediaServiceServicer):

@@ -1,8 +1,7 @@
 from core_api import YOLODetector
-from utils import SecondaryDetails
+from utils import SecondaryDetails, ApiObject
 
 from .base_secondary_api import BaseSecondaryApi
-from apis import ApiObject
 
 class _ObjectLookup(BaseSecondaryApi):
     def __init__(self):
@@ -11,6 +10,7 @@ class _ObjectLookup(BaseSecondaryApi):
     def __call__(self, secondary_details: SecondaryDetails) -> ApiObject:
         img = secondary_details.img
         api_detail = secondary_details.api_detail
+        print("The api detail is ", api_detail)
         object_name = api_detail.get("object_name")
         assert object_name is not None
 

@@ -2,6 +2,7 @@ import cv2
 import glob
 import torch
 import logging
+import argparse
 import numpy as np
 from pathlib import Path
 from collections import deque
@@ -262,4 +263,56 @@ class _FaceRecognition:
         logging.info(f"Most frequent recognized ID is: {most_frequent_id} "
                     f"(count={max_freq}, none_count={none_count})")
         return most_frequent_id
+
+    def get_face_box(self, img: np.ndarray) -> Optional[Tuple[int, int, int, int]]:
+        """
+        Detect the face in the image and return the bounding box.
+
+        Args:
+            img (np.ndarray): The input image array (e.g., from cv2.imread).
+
+        Returns:
+            Optional[Tuple[int, int, int, int]]: Bounding box (x, y, w, h) if a face is detected, else None.
+        """
+        bboxes, _ = self.app.det_model.detect(img, max_num=0, metric='default')
+        if bboxes.shape[0] == 0:
+            # logging.warning("No person found")
+            return None
+
+        first_bbox = bboxes[0, 0:4].astype(int)
+        return tuple(first_bbox)
+
+def main():
+    parser = argparse.ArgumentParser(description="Face recognition embedding extractor")
+    parser.add_argument("--img_path", type=str, help="Path to the input image")
+    parser.add_argument("--output_dir", type=str, default="./output_embeddings", help="Directory to save the embedding")
+    args = parser.parse_args()
+
+    img_path = Path(args.img_path)
+    if not img_path.exists():
+        logging.error(f"Image file not found: {img_path}")
+        return
+
+    img = cv2.imread(str(img_path))
+    if img is None:
+        logging.error("Failed to read image.")
+        return
+
+    recognizer = _FaceRecognition()
+    try:
+        embedding = recognizer._get_embedding(img)
+    except ValueError as e:
+        logging.error(f"Face detection failed: {e}")
+        return
+
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    embedding_path = output_dir / f"{img_path.stem}_embedding.npy"
+    np.save(embedding_path, embedding)
+
+    print(f"Embedding saved at: {embedding_path}")
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    main()
 

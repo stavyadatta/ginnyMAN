@@ -40,11 +40,12 @@ class SecondaryGRPC(SecondaryChannelServicer):
             api_task = json.loads(request.api_task)
             if request.HasField("image"):
                 image_bytes = request.image.image_data
+                print("the api task is ", api_task, "\n \n")
                 image = self._decode_image_from_bytes(image_bytes)
                 response = SecondaryChannel(img=image, api_task=api_task)
                 mode = response.mode
                 return TextChunk(
-                    text=response.textchunk,
+                    text=str(response.textchunk),
                     is_final=False,
                     mode=mode
                 )
