@@ -269,11 +269,21 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         p.close()
         print("Program interrupted by user.")
+        queue_response = stub.ClearQueue(Empty())
+        if queue_response.removed:
+            print("server queue is cleaned")
+        else:
+            print("Some issue in the cleaning the server queue")
         exit()
         image_thread.join()
         head_thread.join()
     except Exception as e:
         # Ensure resources are cleaned up
         print("the p close is getting called because of the following issues ", e)
+        queue_response = stub.ClearQueue(Empty())
+        if queue_response.removed:
+            print("server queue is cleaned")
+        else:
+            print("Some issue in the cleaning the server queue")
         traceback.print_exc()
         p.close()
