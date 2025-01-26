@@ -32,7 +32,7 @@ class _Movement(ApiBase):
         
         print("The total prompt is ", total_prompt)
         # response = Llama.send_to_model(total_prompt, stream=False)
-        response = ChatGPT.send_text_get_json(total_prompt, stream=False)
+        response = ChatGPT.send_text_get_json(total_prompt, stream=False, max_tokens=2000)
 
         print(response.choices[0].message.content)
         yield ApiObject(response.choices[0].message.content, mode='default') 
@@ -44,7 +44,5 @@ class _Movement(ApiBase):
         #         llm_response += content
         #         yield ApiObject(content, movement=True)
         
-        llm_dict = message_format("assistant", llm_response)
-        person_details.add_message(llm_dict)
         person_details.set_attribute("state", "speak")
         Neo4j.add_message_to_person(person_details)

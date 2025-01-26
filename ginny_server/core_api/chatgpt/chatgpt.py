@@ -96,7 +96,7 @@ class _OpenAIHandler:
         except openai.OpenAIError as e:
             return f"API Error: {str(e)}"
 
-    def send_text_get_json(self, messages: list[dict], stream: bool, img=None):
+    def send_text_get_json(self, messages: list[dict], stream: bool, img=None, max_tokens=500):
         """
             :param messages: A dictionary of messages for additional context to be 
              provided to the model for benefit
@@ -110,7 +110,7 @@ class _OpenAIHandler:
             response = self.client.chat.completions.create(
                 model="gpt-4o",
                 messages=messages,
-                max_tokens=500,
+                max_tokens=max_tokens,
                 stream=stream,
                 response_format={"type": "json_object"}
             )

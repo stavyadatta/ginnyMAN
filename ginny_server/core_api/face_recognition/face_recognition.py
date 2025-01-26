@@ -223,8 +223,9 @@ class _FaceRecognition:
             except ValueError as e:
                 # No face found in this image
                 logging.warning(f"No face found in one of the images: {e}")
-                face_ids.append(None)
-                embeddings.append(None)
+
+        if len(face_ids) == 0:
+            return None
 
         # 2) Count how often each ID appears, plus how many are None
         from collections import Counter
