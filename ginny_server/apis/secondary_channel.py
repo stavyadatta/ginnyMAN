@@ -10,7 +10,8 @@ class _SecondaryChannel(ApiBase):
 
     def _developing_system_prompt(self):
         system_prompt = """ 
-        Identify the object that they are referring to and only respond to the object 
+        Identify the object that they are referring to, and respond with 
+        json with the identified object name
 
         for example 
 

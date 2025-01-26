@@ -1,7 +1,7 @@
 from typing import Iterator
 
-from apis import api_call, ApiObject
-from utils import PersonDetails
+from apis import api_call 
+from utils import PersonDetails, ApiObject
 
 from difflib import SequenceMatcher
 

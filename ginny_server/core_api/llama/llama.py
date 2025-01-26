@@ -32,7 +32,7 @@ class _Llama:
             model="gpt-3.5-turbo",
             messages= messages,
             temperature=0.7,
-            max_tokens=500,
+            max_tokens=200,
             top_p=0.9,
             stream=stream
         )

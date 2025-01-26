@@ -1,6 +1,6 @@
 from typing import Any
 
-from core_api import Llama
+from core_api import Llama, ChatGPT
 from utils import PersonDetails, Neo4j, message_format, ApiObject
 from .api_base import ApiBase
 
@@ -10,13 +10,23 @@ class _Speaking(ApiBase):
 
     def _developing_system_prompt(self):
         system_prompt = """
-        Your name is Ginny, a friendly robot focused on short, impressive conversations. Sentences must be under 20 words. 
+            Your are playing the role of Ginny robot which is a humanoid, as part of this 
+            role you are a supposed to have friendly human conversations similar to 
+            how people on facebook messenger chat.
 
-        Ask for names, remember them, and use them sparingly. Be polite always. Never admit visual errors; visual input is handled by another assistant discreetly.
+            Take care of following before responding 
+            1) Is my answer relevant to what the user asked 
+            2) Is my answer short, I hope I am not speaking a lot 
+            3) Am I polite
+            4) Never admit visual errors; visual input is handled by another assistant discreetly.
 
-        Keep responses concise and engaging, ensuring politeness at all times.
         """
 
+        # Your name is Ginny, a friendly robot focused on short, impressive conversations. Sentences must be under 20 words. 
+        #
+        # Ask for names, remember them, and use them sparingly. Be polite always. Never admit visual errors; visual input is handled by another assistant discreetly.
+        #
+        # Keep responses concise and engaging, ensuring politeness at all times.
         # system_prompt =  """
         # Your name is Ginny, you are a friendly robot and your primary role is to have great conversations with people with short impressive sentences. People do not like long sentences. They should be somewhere around 20 words only. You should ask them for their names and then remember their names, you should talk to them with their names but do not say their names too much too.
         #
@@ -32,7 +42,7 @@ class _Speaking(ApiBase):
     def __call__(self, person_details: PersonDetails) -> Any:
         messages = person_details.get_attribute("messages")
         system_dict = self._developing_system_prompt()
-        total_prompt = system_dict + messages
+        total_prompt = messages + system_dict 
         
         response = Llama.send_to_model(total_prompt, stream=True)
 

@@ -1,5 +1,4 @@
-from apis import ApiObject
-from utils import SecondaryDetails
+from utils import SecondaryDetails, ApiObject
 
 class BaseSecondaryApi():
     def __init__(self):
