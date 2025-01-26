@@ -1,6 +1,6 @@
 import json
 
-class BaseSecondaryCommunication():
+class BaseSecondaryCommunication(object):
     def __init__(self):
         pass
 
@@ -10,7 +10,8 @@ class BaseSecondaryCommunication():
 
     def develop_full_details(self, api_name, api_details):
         if isinstance(api_details, dict) and isinstance(api_name, str):
-            object_dict = {"api_name": api_name, "api_details": api_details}
+            object_dict = {"api_name": api_name}
+            object_dict.update(api_details)
             object_str = json.dumps(object_dict)
             return object_str
         else:

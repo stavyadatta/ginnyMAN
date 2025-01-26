@@ -10,7 +10,7 @@ import argparse
 import numpy as np
 from PIL import Image
 from io import BytesIO
-from threading import Thread
+from threading import Thread, Lock
 from google.protobuf.empty_pb2 import Empty
 
 
@@ -52,6 +52,9 @@ class Pepper():
 
         self.session.registerService("CameraManager", self.camera_manager)
         self.life_service.setAutonomousAbilityEnabled("All", False)
+
+        # Make img compatible thread lock 
+        self._lock = Lock()
 
     def get_image(self):
         return self.camera_manager.get_image(raw=True)
@@ -148,7 +151,7 @@ class Pepper():
                     person_missing += 1
                     vertical_ratio, horizontal_ratio = self.get_vertical_and_horizontal_axis(box, img_shape)
 
-                    self.head_manager.rotate_head(forward=float(vertical_ratio), left=float(horizontal_ratio))
+                    # self.head_manager.rotate_head(forward=float(vertical_ratio), left=float(horizontal_ratio))
                 elif self.is_zero_list(box) and person_missing > 30:
                     person_missing = 0
                     self.head_manager.rotate_head_abs()

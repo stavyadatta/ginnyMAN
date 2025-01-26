@@ -11,6 +11,7 @@ RIGHT_LIMIT = 100
 
 class _ObjectLookup(BaseSecondaryCommunication):
     def __init__(self):
+        super(_ObjectLookup, self).__init__()
         self.current_head_pitch = 0.0
         self.current_head_yaw = 0.0
         self.seen_all = False
@@ -55,7 +56,7 @@ class _ObjectLookup(BaseSecondaryCommunication):
             return True
             
     def __call__(self, secondary_details, pepper):
-        super().__call__(secondary_details, pepper)
+        super(_ObjectLookup, self).__call__(secondary_details, pepper)
         self.object_name = secondary_details.get("object_name")
         object_dict = {"object_name": self.object_name}
         api_details = self.develop_api_details(object_dict)
@@ -67,7 +68,7 @@ class _ObjectLookup(BaseSecondaryCommunication):
             height, width, _ = img.shape
             _, image_data = cv2.imencode(".jpg", img)
             image_grpc = Image(
-                image_data=image_data
+                image_data=image_data.tobytes()
             )
             secondary_data = SecondaryData(
                 api_task=grpc_task,
@@ -76,7 +77,11 @@ class _ObjectLookup(BaseSecondaryCommunication):
             try:
                 response = self.secondary_stub.Secondary_media_manager(secondary_data)
                 keep_going = not self.is_object_found(response)
-                
+                if keep_going is False:
+                    print("Keep going as gone false")
             except grpc.RpcError as e:
                 print("gRPC in sending audio error: {} - " \
                 "{}".format(e.code(), e.details()))
+        print("Outside keep going now")
+        self.pepper.head_manager.rotate_head()
+        return

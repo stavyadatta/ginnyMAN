@@ -148,7 +148,7 @@ def send_audio_image_to_grpc(audio_wav_data, sample_rate, num_channels, last_fra
             image_format="JPEG",
             image_width=width,
             image_height=height,
-            image_description="Captured webcam image"
+            api_task="Captured webcam image"
         )
 
         # Call the gRPC method
