@@ -38,8 +38,8 @@ class AudioManager2(object):
         Record the audio data only when the frontMicEnergy crosses a threshold,
         and stop when it's below the threshold for 10 consecutive loops.
         """
-        energy_threshold = 450
-        max_below_thresh_loops = 20  # Stop recording after 10 loops below threshold
+        energy_threshold = 400
+        max_below_thresh_loops = 15  # Stop recording after 10 loops below threshold
 
 
         # Get the front mic energy
