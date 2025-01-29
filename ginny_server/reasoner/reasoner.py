@@ -2,7 +2,7 @@ import traceback
 from typing import Optional
 
 from utils import Neo4j, PersonDetails, message_format
-from core_api import Llama
+from core_api import Llama, ChatGPT
 from .prompt import reasoner_prompt
 
 class _Reasoner:
@@ -83,9 +83,10 @@ class _Reasoner:
             user_prompt = self._developing_user_prompt(transcription)
             total_prompt = system_prompt + user_prompt
 
-            response = Llama.send_to_model(total_prompt, stream=False)
+            # response = Llama.send_to_model(total_prompt, stream=False)
+            response = ChatGPT.send_text(total_prompt, stream=False)
+            print(f"The Reasoner response is {response}\n")
             response_text = response.choices[0].message.content
-            print(f"The Reasoner response is {response_text}\n")
             if response_text not in ("no change", "no change."):
                 print("Is the state inside coming as no change?", response_text)
                 person_details.set_attribute("state", response_text)
