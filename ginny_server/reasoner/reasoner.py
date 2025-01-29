@@ -85,10 +85,9 @@ class _Reasoner:
 
             # response = Llama.send_to_model(total_prompt, stream=False)
             response = ChatGPT.send_text(total_prompt, stream=False)
-            print(f"The Reasoner response is {response}\n")
             response_text = response.choices[0].message.content
             if response_text not in ("no change", "no change."):
-                print("Is the state inside coming as no change?", response_text)
+                print("State:", response_text)
                 person_details.set_attribute("state", response_text)
             person_details.add_message(user_prompt[0])
             return person_details

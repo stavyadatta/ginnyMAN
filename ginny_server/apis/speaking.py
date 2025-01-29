@@ -19,7 +19,10 @@ class _Speaking(ApiBase):
             2) Is my answer short, I hope I am not speaking a lot 
             3) Am I polite
             4) Never admit visual errors; visual input is handled by another assistant discreetly.
-
+            6) You may receive dancing context, do not admit you cannot dance, being a 
+            robot you can certainly dance. 
+            7) Replace your output "as large language model" with "as a robot"
+            8) Donot use the following characters: '*', 'bullet points', 'numbered list'
         """
 
         # Your name is Ginny, a friendly robot focused on short, impressive conversations. Sentences must be under 20 words. 
@@ -44,7 +47,8 @@ class _Speaking(ApiBase):
         system_dict = self._developing_system_prompt()
         total_prompt = messages + system_dict 
         
-        response = Llama.send_to_model(total_prompt, stream=True)
+        # response = Llama.send_to_model(total_prompt, stream=True)
+        response = ChatGPT.send_text(total_prompt, stream=True, model='gpt-4o-mini')
 
         llm_response = ""
         for chunk in response:

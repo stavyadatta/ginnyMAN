@@ -40,7 +40,6 @@ class _Executor():
         state = str(person_details.get_attribute("state"))
 
         best_key = find_best_match(state, api_call.keys())
-        print(f"state given {state} and chosen is {best_key}")
 
         response = api_call[best_key](person_details)
         return response
