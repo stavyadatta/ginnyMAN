@@ -1,5 +1,6 @@
 import re
 import json
+import time
 
 class _MovementManagement():
     def __init__(self):
@@ -37,7 +38,8 @@ class _MovementManagement():
             angles.append(action.get("angle"))
             speed.append(action.get("speed"))
 
-        print("Highfice dictionary ", joint_names, angles, speed)
         pepper.arm_movement(joint_names, angles, speed)
+        pepper.posture_service.goToPosture("StandInit", 0.2)
+        time.sleep(2)
 
 
