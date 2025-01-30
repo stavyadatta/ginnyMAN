@@ -1,9 +1,10 @@
 import qi
 import sys
 import time
-import motion
+import math
 import argparse
 
+DEG_TO_RAD = math.pi / 100
 class ArmManager:
     def __init__(self, session):
         self.motion_service = session.service("ALMotion")
@@ -12,7 +13,7 @@ class ArmManager:
 
     def movement(self, joint_names, joint_angles, speed):
         for name, angle, sp in zip(joint_names, joint_angles, speed):
-            radian_angle = angle * motion.TO_RAD
+            radian_angle = angle * DEG_TO_RAD
             try:
                 self.motion_service.angleInterpolationWithSpeed(name, radian_angle, sp)
             except Exception as e:

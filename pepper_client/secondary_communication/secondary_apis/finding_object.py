@@ -1,11 +1,12 @@
 import cv2
 import grpc
-import motion
+import math
 
 from grpc_communication.grpc_pb2 import SecondaryData, Image
 
 from .base_secondary_communication import BaseSecondaryCommunication
 
+DEG_TO_RAD = math.pi / 100
 LEFT_LIMIT = -100
 RIGHT_LIMIT = 100
 
@@ -46,7 +47,7 @@ class _ObjectLookup(BaseSecondaryCommunication):
             else:
                 self.head_position = new_position
 
-        angle_in_radians = self.head_position * motion.TO_RAD
+        angle_in_radians = self.head_position * DEG_TO_RAD
         self.pepper.head_manager.rotate_head(left=float(angle_in_radians))
         return no_movement_needed
 
