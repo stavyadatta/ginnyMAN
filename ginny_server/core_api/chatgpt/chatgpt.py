@@ -75,7 +75,7 @@ class _OpenAIHandler:
         except Exception as e:
             yield f"Unexpected Error: {str(e)}"
 
-    def send_text(self, messages: list[dict], stream: bool, img=None):
+    def send_text(self, messages: list[dict], stream: bool, img=None, model="gpt-4o"):
         """
             :param messages: A dictionary of messages for additional context to be 
              provided to the model for benefit
@@ -87,7 +87,7 @@ class _OpenAIHandler:
         """
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4o",
+                model=model,
                 messages=messages,
                 max_tokens=500,
                 stream=stream
@@ -96,7 +96,7 @@ class _OpenAIHandler:
         except openai.OpenAIError as e:
             return f"API Error: {str(e)}"
 
-    def send_text_get_json(self, messages: list[dict], stream: bool, img=None):
+    def send_text_get_json(self, messages: list[dict], stream: bool, img=None, max_tokens=500, model="gpt-4o"):
         """
             :param messages: A dictionary of messages for additional context to be 
              provided to the model for benefit
@@ -108,9 +108,9 @@ class _OpenAIHandler:
         """
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4o",
+                model=model,
                 messages=messages,
-                max_tokens=500,
+                max_tokens=max_tokens,
                 stream=stream,
                 response_format={"type": "json_object"}
             )

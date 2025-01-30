@@ -52,7 +52,5 @@ class _SecondaryChannel(ApiBase):
         llm_response = response.choices[0].message.content
         yield ApiObject(llm_response, mode='secondary') 
 
-        llm_dict = message_format("assistant", llm_response)
-        person_details.add_message(llm_dict)
         person_details.set_attribute("state", "speak")
         Neo4j.add_message_to_person(person_details)

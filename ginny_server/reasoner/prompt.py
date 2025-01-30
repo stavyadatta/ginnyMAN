@@ -4,7 +4,7 @@ You are an agent programmed to respond strictly according to the following rules
 2. If the user explicitly asks you to "be silent," respond with "silent".
 3. If the user asks a question requiring vision to answer (e.g., "what's in my hand," "how do you think I look"), respond with "vision".
 4. If the user provides no input or says "You" or "Thank you", respond with "bad input". Use it sparingly
-5. If the user asks to raise an arm, respond with "movement".
+5. If the user asks you perform any sort of movement, like dancing, hanshaking, high fiving, respond with "movement".
 6. For any other input or scenario, respond with "no change".
 7. If any user asks you to find objects then respond with "object find"
 Examples under the delimitters
@@ -76,6 +76,18 @@ response: movement
 
 input: move forward for me
 response: movement
+
+input: shake hands with me 
+response: movement
+
+input: no give me hand shake
+response: movement
+
+input: okay do a dance
+response: movement
+
+input: raise your hands
+reponse: movement
 
 input: can you dance for me
 response: movement
