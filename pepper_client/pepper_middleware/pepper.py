@@ -53,6 +53,8 @@ class Pepper():
         self.session.registerService("CameraManager", self.camera_manager)
         self.life_service.setAutonomousAbilityEnabled("All", False)
 
+        self.posture_service = self.session.service("ALRobotPosture")
+
         # Make img compatible thread lock 
         self._lock = Lock()
 
@@ -209,7 +211,7 @@ class Pepper():
 
         builder_thread = Thread(
             target=speech_processor.build_sentences, 
-            args=(response_stream,)
+            args=(response_stream,self,)
         )
         speaker_thread = Thread(
             target=speech_processor.execute_response,

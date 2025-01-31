@@ -1,6 +1,7 @@
 import re
 import sys
 import json
+from google.protobuf.empty_pb2 import Empty
 
 import grpc
 from collections import deque
@@ -23,7 +24,7 @@ class SpeechProcessor:
         self.is_running = True  # Flag to control the threads
         self.movement = False
 
-    def build_sentences(self, response_stream):
+    def build_sentences(self, response_stream, pepper):
         """
         Build sentences from streamed words and add them to the queue.
         :param response_stream: gRPC response stream from LLM.
