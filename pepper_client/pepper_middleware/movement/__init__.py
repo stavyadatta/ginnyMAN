@@ -1,5 +1,5 @@
-from .movement_management import _MovementManagement
+from .custom_movement_management import _CustomMovementManagement
 
-MovementManager = _MovementManagement()
+CustomMovementManager = _CustomMovementManagement()
 
-__all__ = ["MovementManager"]
+__all__ = ["CustomMovementManager"]

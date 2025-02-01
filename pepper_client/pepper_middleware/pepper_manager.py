@@ -14,7 +14,7 @@ from grpc_communication.grpc_pb2 import AudioImgRequest, ImageStreamRequest
 from grpc_communication.grpc_pb2_grpc import MediaServiceStub
 from utils import SpeechProcessor, is_zero_list, get_vh_axis
 
-from movement import MovementManager
+from movement import CustomMovementManager
 
 logging.basicConfig(filename="app.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -139,7 +139,7 @@ class PepperManager():
 
         if speech_processor.movement:
             for chunk in response_stream:
-                MovementManager(chunk, self.pepper)
+                CustomMovementManager(chunk, self.pepper)
 
 
 if __name__ == "__main__":
