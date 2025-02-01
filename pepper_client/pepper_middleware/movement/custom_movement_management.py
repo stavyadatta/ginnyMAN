@@ -2,7 +2,7 @@ import re
 import json
 import time
 
-class _MovementManagement():
+class _CustomMovementManagement():
     def __init__(self):
         pass
 
@@ -25,7 +25,6 @@ class _MovementManagement():
         raise ValueError("No valid JSON found in the text.")
 
     def __call__(self, llm_response, pepper):
-        print("The thing is getting valled yes")
         action_json = self.extract_json_from_text(llm_response)
         print("The json action is \n \n \n \n ", action_json)
         action_items = action_json.get("action_list")

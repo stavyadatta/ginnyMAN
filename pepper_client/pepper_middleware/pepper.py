@@ -19,7 +19,6 @@ from grpc_communication.grpc_pb2_grpc import MediaServiceStub, SecondaryChannelS
 from pepper_api import CameraManager, AudioManager2, HeadManager, EyeLEDManager, \
     SpeechManager, ArmManager
 from utils import SpeechProcessor
-from movement import MovementManager
 
 logging.basicConfig(filename="app.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -43,6 +42,7 @@ class Pepper():
 
 
         self.eye_led_manager = EyeLEDManager(self.session)
+        self.session.listen("tcp://192.168.0.50:9559")
         self.session.registerService("AudioManager2", self.audio_manager)
         self.audio_manager.init_service(self.session)
 
