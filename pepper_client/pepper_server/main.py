@@ -7,7 +7,7 @@ import numpy as np
 from PIL import Image
 
 from pepper_api import CameraManager, AudioManager2, HeadManager, EyeLEDManager, \
-    SpeechManager, ArmManager
+    SpeechManager, CustomMovement
 from utils import SpeechProcessor
 
 logging.basicConfig(filename="app.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -34,7 +34,7 @@ class Pepper():
 
 
         self.head_manager = HeadManager(self.session)
-        self.arm_manager = ArmManager(self.session)
+        self.arm_manager = CustomMovement(self.session)
 
         self.session.registerService("CameraManager", self.camera_manager)
         self.life_service.setAutonomousAbilityEnabled("All", False)

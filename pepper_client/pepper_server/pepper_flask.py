@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 
 from pepper_api import CameraManager, AudioManager2, HeadManager, EyeLEDManager, \
-    SpeechManager, ArmManager
+    SpeechManager, CustomMovement
 
 
 class PepperFlask(object):
@@ -24,7 +24,7 @@ class PepperFlask(object):
         self.audio_manager = AudioManager2(self.session)
         self.eye_led_manager = EyeLEDManager(self.session)
         self.head_manager = HeadManager(self.session)
-        self.arm_manager = ArmManager(self.session)
+        self.arm_manager = CustomMovement(self.session)
 
         # Registering services if needed
         self.session.registerService("AudioManager2", self.audio_manager)

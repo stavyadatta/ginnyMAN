@@ -17,7 +17,7 @@ from google.protobuf.empty_pb2 import Empty
 from grpc_communication.grpc_pb2 import AudioImgRequest, ImageStreamRequest
 from grpc_communication.grpc_pb2_grpc import MediaServiceStub, SecondaryChannelStub
 from pepper_api import CameraManager, AudioManager2, HeadManager, EyeLEDManager, \
-    SpeechManager, ArmManager
+    SpeechManager, CustomMovement, StandardMovement
 from utils import SpeechProcessor
 
 logging.basicConfig(filename="app.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -46,14 +46,13 @@ class Pepper():
         self.session.registerService("AudioManager2", self.audio_manager)
         self.audio_manager.init_service(self.session)
 
-
+        self.posture_service = self.session.service("ALRobotPosture")
         self.head_manager = HeadManager(self.session)
-        self.arm_manager = ArmManager(self.session)
+        self.custom_movement = CustomMovement(self.session, self.posture_service)
+        self.standard_movement = StandardMovement(self.session)
 
         self.session.registerService("CameraManager", self.camera_manager)
         self.life_service.setAutonomousAbilityEnabled("All", False)
-
-        self.posture_service = self.session.service("ALRobotPosture")
 
         # Make img compatible thread lock 
         self._lock = Lock()
@@ -137,7 +136,7 @@ class Pepper():
         return False
 
     def arm_movement(self, joint_names, joint_angles, speed):
-        self.arm_manager.movement(joint_names, joint_angles, speed)
+        self.custom_movement.movement(joint_names, joint_angles, speed)
 
     def head_management(self):
         try:

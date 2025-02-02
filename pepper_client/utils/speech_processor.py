@@ -6,7 +6,6 @@ from google.protobuf.empty_pb2 import Empty
 import grpc
 from collections import deque
 
-from movement import CustomMovementManager
 from secondary_communication import SecondaryCommunication
 
 def is_valid_json(text):
@@ -67,5 +66,7 @@ class SpeechProcessor:
                     print("Is it coming for the valid movement manager \n \n \n")
                     if mode == "secondary":
                         SecondaryCommunication(sentence_to_say, mode, pepper)
-                    elif mode == "custom movement":
-                        CustomMovementManager(sentence_to_say, pepper)
+                    elif mode == "custom_movement":
+                        pepper.custom_movement(sentence_to_say)
+                    elif mode == "standard_movement":
+                        pepper.standard_movement(sentence_to_say)

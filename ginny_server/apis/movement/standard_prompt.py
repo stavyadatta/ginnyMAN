@@ -1,9 +1,9 @@
 disco_dance = {
-    "animation_type": "Disco"
+    "animation_type": "Dance"
 }
 
 head_bang = {
-    "animation_type": "HeadBang"
+    "animation_type": "Dance"
 }
 
 movement_prompt = f""" 
@@ -12,8 +12,7 @@ will have to reply in form of movements that will be executed by the GINNY robot
 which is a kind of Pepper Robot. 
 
 You only have a choice between the following movements
-1) HeadBang
-2) Disco
+1) Dance
 
 Any prompt that you get you need to decide whether the robot needs to do a disco
 on this or HeadBang on this, below are few examples of input that and there responses 

@@ -1,0 +1,54 @@
+import qi
+import time
+import json
+import random
+
+class StandardMovement:
+    def __init__(self, session):
+        self.animation_service = session.service("ALAnimationPlayer")
+        print("Initialized ALMotion")
+
+    def extract_json_from_text(self, text):
+        """
+        Extracts and parses JSON embedded within a text string.
+        
+        :param text: The input string containing JSON and/or other text.
+        :return: The parsed JSON as a Python dictionary if found.
+        :raises ValueError: If no valid JSON is found in the text.
+        """
+        # Regular expression to find JSON-like structures in the text
+        try:
+            print("Well trying the json loads thingy")
+            return json.loads(text)
+        except json.JSONDecodeError:
+            print("Entering the error")
+            raise ValueError("Found a JSON-like structure, but it is not valid JSON.")
+
+    def choosing_random_dances(self):
+        dance_types = [
+            "asereje",
+            "atelierparis_lacigaleetlafourmi",
+            "danceoftheknights",
+            "danceofthereedflutes",
+            "dango3kyodai",
+            "Disco",
+            "HeadBang",
+            "hungarian",
+            "jgangnamstyle",
+            "la_bamba",
+            "mika_relax",
+            "translations",
+            "Vacuum",
+            "walk_this_way"
+        ]
+        return random.choice(dance_types)
+
+
+    def perform_animation(self, animation_name):
+        self.animation_service.run(f"hapy_dance/{animation_name}")
+
+    def __call__(self, llm_response):
+        action_json = self.extract_json_from_text(llm_response)
+        animation_type = action_json.get("animation_type")
+        dance_type = self.choosing_random_dances()
+        self.perform_animation(dance_type)
