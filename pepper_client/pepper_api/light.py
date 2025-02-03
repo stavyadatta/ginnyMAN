@@ -26,7 +26,7 @@ class EyeLEDManager:
                 The RGB value of the color to set the LEDs to, in hexadecimal format (e.g., 0x00FF0000 for red)
         """
         for led in self.right_eye_leds + self.left_eye_leds:
-            self.leds_service.fadeRGB(led, color, 0.1)  # Duration is set to a small value for immediate change
+            self.leds_service.fadeRGB(led, color, 0.01)  # Duration is set to a small value for immediate change
 
     def set_eyes_blue(self):
         """

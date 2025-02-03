@@ -18,7 +18,6 @@ class StandardMovement:
         """
         # Regular expression to find JSON-like structures in the text
         try:
-            print("Well trying the json loads thingy")
             return json.loads(text)
         except json.JSONDecodeError:
             print("Entering the error")
@@ -37,7 +36,6 @@ class StandardMovement:
             "jgangnamstyle",
             "la_bamba",
             "mika_relax",
-            "translations",
             "Vacuum",
             "walk_this_way"
         ]
@@ -54,4 +52,5 @@ class StandardMovement:
         action_json = self.extract_json_from_text(llm_response)
         animation_type = action_json.get("animation_type")
         dance_type = self.choosing_random_dances()
+        print("Now performing ", dance_type)
         self.perform_dance(dance_type)

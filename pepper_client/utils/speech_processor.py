@@ -24,6 +24,7 @@ class SpeechProcessor:
         self.current_sentence = ""
         self.speech_function = speech_function  # Instance of Pepper's speech manager
         self.is_running = True  # Flag to control the threads
+        self.to_execute_movement_thread = True
         self.movement = False
         self.standard_movement = standard_movement
         self.do_movement = threading.Event()
@@ -32,13 +33,14 @@ class SpeechProcessor:
 
     def body_movement(self):
     # This loop will keep the thread alive as long as self.is_running is True.
-        while self.is_running:
+        movement_num = 1
+        while self.to_execute_movement_thread:
             if self.do_movement.is_set():
                 # If the event is set, perform a movement
-                print("How many times comoin in")
-                body_num = random.randint(1, 16)
-                print("Performing movement with body number:", body_num)
-                self.standard_movement.perform_body_speech(body_num)
+                self.standard_movement.perform_body_speech(movement_num)
+                movement_num += 1
+                if movement_num > 16:
+                    movement_num = 1
             else:
                 # When not moving, you might want to sleep briefly to prevent busy-waiting
                 time.sleep(0.1)
@@ -52,6 +54,9 @@ class SpeechProcessor:
             for chunk in response_stream:
                 sys.stdout.write(chunk.text + "")
                 sys.stdout.flush()
+
+                if chunk.is_final == True:
+                    break
 
                 # Append chunk words to the current sentence
                 self.current_sentence += chunk.text
@@ -84,7 +89,6 @@ class SpeechProcessor:
                     self.do_movement.set()
                     self.speech_function(sentence_to_say)
                 else:
-                    print("Is it coming for the valid movement manager \n \n \n")
                     if mode == "secondary":
                         SecondaryCommunication(sentence_to_say, mode, pepper)
                     elif mode == "custom_movement":

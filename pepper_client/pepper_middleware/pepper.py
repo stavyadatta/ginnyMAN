@@ -224,6 +224,8 @@ class Pepper():
         builder_thread.join()
         speech_processor.is_running = False
         speaker_thread.join()
+        speech_processor.to_execute_movement_thread = False
+        self.posture_service.goToPosture("StandInit", 0.2)
         
         speech_processor.body_thread.join()
 
