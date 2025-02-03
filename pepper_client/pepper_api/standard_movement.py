@@ -6,7 +6,7 @@ import random
 class StandardMovement:
     def __init__(self, session):
         self.animation_service = session.service("ALAnimationPlayer")
-        print("Initialized ALMotion")
+        print("Initialized ALAnimationPlayer")
 
     def extract_json_from_text(self, text):
         """
@@ -44,11 +44,14 @@ class StandardMovement:
         return random.choice(dance_types)
 
 
-    def perform_animation(self, animation_name):
+    def perform_dance(self, animation_name):
         self.animation_service.run(f"hapy_dance/{animation_name}")
+
+    def perform_body_speech(self, animation_num):
+        self.animation_service.run(f"animations/Stand/BodyTalk/Speaking/BodyTalk_{animation_num}")
 
     def __call__(self, llm_response):
         action_json = self.extract_json_from_text(llm_response)
         animation_type = action_json.get("animation_type")
         dance_type = self.choosing_random_dances()
-        self.perform_animation(dance_type)
+        self.perform_dance(dance_type)

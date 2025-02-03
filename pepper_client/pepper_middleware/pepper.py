@@ -37,6 +37,7 @@ class Pepper():
         self.life_service = self.session.service("ALAutonomousLife")
         self.camera_manager = CameraManager(self.session, resolution=5, colorspace=11, fps=30)
 
+        self.standard_movement = StandardMovement(self.session)
         self.speech_manager = SpeechManager(self.session)
         self.audio_manager = AudioManager2(self.session)
 
@@ -49,7 +50,6 @@ class Pepper():
         self.posture_service = self.session.service("ALRobotPosture")
         self.head_manager = HeadManager(self.session)
         self.custom_movement = CustomMovement(self.session, self.posture_service)
-        self.standard_movement = StandardMovement(self.session)
 
         self.session.registerService("CameraManager", self.camera_manager)
         self.life_service.setAutonomousAbilityEnabled("All", False)
@@ -202,7 +202,7 @@ class Pepper():
             self.send_audio_video()
 
     def receive_llm_response(self):
-        speech_processor = SpeechProcessor(self.speech_manager.say)
+        speech_processor = SpeechProcessor(self.speech_manager.say, self.standard_movement)
         
         request = Empty()
         response_stream = stub.LLmResponse(request)
@@ -224,6 +224,8 @@ class Pepper():
         builder_thread.join()
         speech_processor.is_running = False
         speaker_thread.join()
+        
+        speech_processor.body_thread.join()
 
         # if speech_processor.movement:
         #     print("Is this coming here, do you think its coming in the movement")

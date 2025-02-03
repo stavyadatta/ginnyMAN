@@ -1,6 +1,9 @@
 import re
 import sys
 import json
+import time
+import random
+import threading
 from google.protobuf.empty_pb2 import Empty
 
 import grpc
@@ -16,12 +19,29 @@ def is_valid_json(text):
         return False
 
 class SpeechProcessor:
-    def __init__(self, speech_function):
+    def __init__(self, speech_function, standard_movement):
         self.sentence_queue = deque()  # Queue for sentences
         self.current_sentence = ""
         self.speech_function = speech_function  # Instance of Pepper's speech manager
         self.is_running = True  # Flag to control the threads
         self.movement = False
+        self.standard_movement = standard_movement
+        self.do_movement = threading.Event()
+        self.body_thread = threading.Thread(target=self.body_movement)
+        self.body_thread.start()
+
+    def body_movement(self):
+    # This loop will keep the thread alive as long as self.is_running is True.
+        while self.is_running:
+            if self.do_movement.is_set():
+                # If the event is set, perform a movement
+                print("How many times comoin in")
+                body_num = random.randint(1, 16)
+                print("Performing movement with body number:", body_num)
+                self.standard_movement.perform_body_speech(body_num)
+            else:
+                # When not moving, you might want to sleep briefly to prevent busy-waiting
+                time.sleep(0.1)
 
     def build_sentences(self, response_stream, pepper):
         """
@@ -61,6 +81,7 @@ class SpeechProcessor:
                 sentence_to_say = sentence_tuple[0]
                 mode = sentence_tuple[1]
                 if not is_valid_json(sentence_to_say):
+                    self.do_movement.set()
                     self.speech_function(sentence_to_say)
                 else:
                     print("Is it coming for the valid movement manager \n \n \n")
@@ -70,3 +91,5 @@ class SpeechProcessor:
                         pepper.custom_movement(sentence_to_say)
                     elif mode == "standard_movement":
                         pepper.standard_movement(sentence_to_say)
+
+        self.do_movement.clear()
