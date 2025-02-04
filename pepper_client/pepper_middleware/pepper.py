@@ -199,6 +199,7 @@ class Pepper():
         except UnboundLocalError as e:
             print("Unbounded local error occuring")
             traceback.print_exc()
+            self.stub.ClearQueue(Empty())
             self.send_audio_video()
 
     def receive_llm_response(self):

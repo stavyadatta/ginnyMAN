@@ -55,8 +55,8 @@ class SpeechProcessor:
                 sys.stdout.write(chunk.text + "")
                 sys.stdout.flush()
 
-                if chunk.is_final == True:
-                    break
+                # if chunk.is_final == True:
+                #     break
 
                 # Append chunk words to the current sentence
                 self.current_sentence += chunk.text
