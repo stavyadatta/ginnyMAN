@@ -190,6 +190,7 @@ class MediaManager(MediaServiceServicer):
 
         empty_queue(self.audio_img_queue)
         empty_queue(self.llama_response_queue)
+        print("The ques have been cleaned for both")
 
         return QueueRemoval(
             removed=True

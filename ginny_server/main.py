@@ -34,6 +34,7 @@ def process_audio(audio_img_queue: queue.Queue,
 
             # Get the face information 
             image = audio_img_item.get("image_data")
+            cv2.imwrite("/workspace/database/face_db/some.jpg", image)
             face_id = FaceRecognition.get_most_frequent_face_id(image_queue)
 
             person_details = Reasoner(transcription, face_id)
@@ -55,7 +56,7 @@ def process_audio(audio_img_queue: queue.Queue,
             llama_response_queue.put({
                 'text': '',
                 'is_final': True,
-                'mode': mode
+                'mode': 'default'
             })
             print()  # Newline after streaming is complete
         except Exception as e:

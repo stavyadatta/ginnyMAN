@@ -35,7 +35,7 @@ class _GrokHandler:
         return encoded_image
 
 
-    def send_text(self, messages: list[dict], stream: bool, img=None):
+    def send_text(self, messages: list[dict], stream: bool, img=None, grok_model="grok-2-vision-1212"):
         """
             :param messages: A dictionary of messages for additional context to be 
              provided to the model for benefit
@@ -46,7 +46,7 @@ class _GrokHandler:
                 output
         """
         response = self.client.chat.completions.create(
-            model= "grok-2-vision-1212",
+            model= grok_model,
             messages= messages,
             temperature=0.7,
             max_tokens=500,
@@ -56,7 +56,7 @@ class _GrokHandler:
         return response
 
 
-    def process_image_and_text(self, image, person_details, max_tokens=1000):
+    def process_image_and_text(self, image, person_details, max_tokens=1000, system_prompt=None):
         """
         Process an image and text prompt using OpenAI API with streaming.
 
@@ -74,7 +74,8 @@ class _GrokHandler:
         last_dict = self.develop_last_message(last_message, img_base64)
 
         # Create the system prompt
-        system_prompt = self._develop_system_prompt()
+        if system_prompt == None:
+            system_prompt = self._develop_system_prompt()
 
         # Combine messages for the API call
         total_prompt = all_but_last_message + [last_dict]
