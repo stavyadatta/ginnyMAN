@@ -110,6 +110,7 @@ class Pepper():
                     self.stub.StreamImages(iter([request]))
                 except grpc.RpcError as e:
                     logger.error("Failed to stream image: {}".format(e.details()))
+                time.sleep(0.1)
         except KeyboardInterrupt:
             logger.info("Stopping image streaming...")
             raise KeyboardInterrupt()
