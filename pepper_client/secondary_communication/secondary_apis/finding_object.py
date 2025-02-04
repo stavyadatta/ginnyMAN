@@ -88,4 +88,5 @@ class _ObjectLookup(BaseSecondaryCommunication):
                 "{}".format(e.code(), e.details()))
         print("Outside keep going now")
         self.pepper.head_manager.rotate_head_abs()
+        self.__init__()
         return

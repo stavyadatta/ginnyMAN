@@ -26,7 +26,6 @@ class StandardMovement:
     def choosing_random_dances(self):
         dance_types = [
             "asereje",
-            "atelierparis_lacigaleetlafourmi",
             "danceoftheknights",
             "danceofthereedflutes",
             "dango3kyodai",
