@@ -176,6 +176,8 @@ class Pepper():
 
     def send_audio_video(self):
         audio_data, sample_rate = self.get_audio()
+        height, width = 240, 320
+        last_frame = np.zeros((height, width, 3), dtype=np.uint8)
         try:
             last_frame = self.make_img_compatible()
         except TypeError:
@@ -184,6 +186,9 @@ class Pepper():
         try:
             height, width, _ = last_frame.shape
             _, image_data = cv2.imencode(".jpg", last_frame)
+
+            if np.all(last_frame == 0):
+                print("The frame is blank")
             request = AudioImgRequest(
                 audio_data=audio_data,
                 sample_rate=sample_rate,
