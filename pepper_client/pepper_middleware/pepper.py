@@ -14,7 +14,6 @@ from threading import Thread, Lock, Event
 from google.protobuf.empty_pb2 import Empty
 from concurrent import futures
 
-
 import grpc_communication.pepper_auto_pb2_grpc as pepper_pb2_grpc
 import grpc_communication.pepper_auto_pb2 as pepper_pb2
 from grpc_communication.grpc_pb2 import AudioImgRequest, ImageStreamRequest
@@ -26,6 +25,7 @@ from pepper_auto import PepperAutoController
 
 logging.basicConfig(filename="app.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
 
 class Pepper():
     def __init__(self, pepper_connection_url, stub, secondary_stub):
@@ -45,7 +45,6 @@ class Pepper():
         self.speech_manager = SpeechManager(self.session)
         self.audio_manager = AudioManager2(self.session)
 
-
         self.eye_led_manager = EyeLEDManager(self.session)
         self.session.listen("tcp://192.168.0.50:9559")
         self.session.registerService("AudioManager2", self.audio_manager)
@@ -59,7 +58,6 @@ class Pepper():
         self.life_service.setAutonomousAbilityEnabled("All", False)
 
         self.not_send_imgs = Event()
-
 
     def get_image(self):
         return self.camera_manager.get_image(raw=True)
@@ -161,6 +159,7 @@ class Pepper():
                     person_missing += 1
                     vertical_ratio, horizontal_ratio = self.get_vertical_and_horizontal_axis(box, img_shape)
 
+                    # Uncomment the following line when ready to enable head movement:
                     # self.head_manager.rotate_head(forward=float(vertical_ratio), left=float(horizontal_ratio))
                 elif self.is_zero_list(box) and person_missing > 30:
                     person_missing = 0
@@ -172,7 +171,6 @@ class Pepper():
         except Exception as e:
             print("Some error in head_management, donot know ", e)
             traceback.print_exc()
-
 
     def send_audio_video(self):
         audio_data, sample_rate = self.get_audio()
@@ -206,8 +204,7 @@ class Pepper():
             try:
                 response = self.stub.SendAudioImg(request)
             except grpc.RpcError as e:
-                print("gRPC in sending audio error: {} - " \
-                "{}".format(e.code(), e.details()))
+                print("gRPC in sending audio error: {} - {}".format(e.code(), e.details()))
 
             time.sleep(1)  # Adjust delay as needed
         except UnboundLocalError as e:
@@ -220,12 +217,11 @@ class Pepper():
         speech_processor = SpeechProcessor(self.speech_manager.say, self.standard_movement)
         
         request = Empty()
-        response_stream = stub.LLmResponse(request)
-
+        response_stream = self.stub.LLmResponse(request)
 
         builder_thread = Thread(
             target=speech_processor.build_sentences, 
-            args=(response_stream,self,)
+            args=(response_stream, self,)
         )
         speaker_thread = Thread(
             target=speech_processor.execute_response,
@@ -244,13 +240,8 @@ class Pepper():
         
         speech_processor.body_thread.join()
 
-        # if speech_processor.movement:
-        #     print("Is this coming here, do you think its coming in the movement")
-        #     MovementManager(speech_processor.json_text, self)
-        #     speech_processor.json_text = ''
-
     def close(self):
-    # Shut down services and clean up resources
+        # Shut down services and clean up resources
         print("Shutting down Pepper services...")
         del self.camera_manager
         del self.life_service
@@ -261,24 +252,26 @@ class Pepper():
         self.session.close()
         print("Pepper resources have been cleaned up.")
 
+
 def pepper_auto_server(pepper):
-    print("Is entering the function?")
+    print("Entering pepper_auto_server function...")
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     pepper_pb2_grpc.add_PepperAutoServicer_to_server(
         PepperAutoController(pepper),
         server
     )
-    print("Auto servicer is added to the stuff")
+    print("PepperAutoServicer added to the server.")
 
     server.add_insecure_port("[::]:50051")
-    print("Is the grpc up?")
+    print("gRPC server starting on port 50051...")
 
     try:
         server.start()
         server.wait_for_termination()
     except KeyboardInterrupt:
-        print("Shutting down server")
+        print("Shutting down server...")
         server.stop(0)
+        raise KeyboardInterrupt
 
 
 if __name__ == "__main__":
@@ -294,41 +287,40 @@ if __name__ == "__main__":
     secondary_stub = SecondaryChannelStub(channel)
 
     p = Pepper(pepper_connection_url, stub, secondary_stub)
-    image_thread = Thread(target=p.capture_and_stream_images, args=()) 
+
+    # Start the image streaming thread (if needed)
+    image_thread = Thread(target=p.capture_and_stream_images)
     image_thread.daemon = True
-    # image_thread.start()
+    image_thread.start()
 
-    head_thread = Thread(target=p.head_management, args=())
+    # Start the head management thread
+    head_thread = Thread(target=p.head_management)
     head_thread.daemon = True
-    # head_thread.start()
+    head_thread.start()
 
-    # pepper_auto_thread = Thread(target=pepper_auto_server, args=(p, ))
-    # pepper_auto_thread.daemon = True
-    # pepper_auto_thread.start()
-    pepper_auto_server(p)
-    
-    # try:
-    #     while True:
-    #         p.send_audio_video()
-    #         p.receive_llm_response()
-    # except KeyboardInterrupt:
-    #     p.close()
-    #     print("Program interrupted by user.")
-    #     queue_response = stub.ClearQueue(Empty())
-    #     if queue_response.removed:
-    #         print("server queue is cleaned")
-    #     else:
-    #         print("Some issue in the cleaning the server queue")
-    #     exit()
-    #     image_thread.join()
-    #     head_thread.join()
-    # except Exception as e:
-    #     # Ensure resources are cleaned up
-    #     print("the p close is getting called because of the following issues ", e)
-    #     queue_response = stub.ClearQueue(Empty())
-    #     if queue_response.removed:
-    #         print("server queue is cleaned")
-    #     else:
-    #         print("Some issue in the cleaning the server queue")
-    #     traceback.print_exc()
-    #     p.close()
+    # Run the gRPC server in its own thread so it does not block further execution
+    pepper_auto_thread = Thread(target=pepper_auto_server, args=(p,))
+    pepper_auto_thread.daemon = True
+    pepper_auto_thread.start()
+
+    try:
+        # Main loop: send audio and video and process LLM responses
+        while True:
+            p.send_audio_video()
+            p.receive_llm_response()
+    except KeyboardInterrupt:
+        print("Program interrupted by user.")
+        p.close()
+        queue_response = stub.ClearQueue(Empty())
+        if queue_response.removed:
+            print("Server queue has been cleaned.")
+        else:
+            print("There was an issue cleaning the server queue.")
+        # Optionally join threads if needed:
+        image_thread.join()
+        head_thread.join()
+    except Exception as e:
+        print("An error occurred:", e)
+        traceback.print_exc()
+        p.close()
+
