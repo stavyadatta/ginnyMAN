@@ -18,6 +18,9 @@ message ConfirmationChunk {
     bool confirmed=1;
 }
 
+// Joint name: HeadYaw, HeadPitch, LShoulderPitch, LShoulderRoll, LElbowYaw, LElbowRoll, LWristYaw, LHand, RShoulderPitch, RShoulderRoll, RElbowYaw, RElbowRoll, RWristYaw, RHand, HipRoll, HipPitch, KneePitch, AnklePitch
+// angle in radians 
+// speed between 0 and 1
 message ExecuteParam {
   string joint_name=1;
   float angle=2;

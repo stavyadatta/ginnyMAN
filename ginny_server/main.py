@@ -31,6 +31,8 @@ def process_audio(audio_img_queue: queue.Queue,
             # Transcribe the audio
             transcription = WhisperSpeech2Text(audio_img_item)
             print(f"Transcription: {transcription}")
+            if len(transcription) < 2:
+                transcription = "You"
 
             # Get the face information 
             image = audio_img_item.get("image_data")

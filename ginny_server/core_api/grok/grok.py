@@ -55,6 +55,37 @@ class _GrokHandler:
         )
         return response
 
+    def img_text_response(self, image, text, max_tokens=1000, system_prompt=None):
+        """
+        Process an image and text prompt using OpenAI API with streaming.
+
+        :param image: NumPy array (from cv2), image path, or file-like object
+        :param text: string with the user message
+        :param max_tokens: Maximum tokens for response
+        :returns: returns response 
+        """
+        img_base64 = self._encode_image(image)
+        img_text_dict = self.develop_last_message(text, img_base64)
+        if system_prompt == None:
+            system_prompt = self._develop_system_prompt()
+
+        try:
+            # Start streaming response
+            response = self.client.chat.completions.create(
+                model="grok-2-vision-1212",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    img_text_dict
+                ],
+                max_tokens=max_tokens,
+                stream=False
+            )
+            return response.choices[0].message.content
+
+        except openai.OpenAIError as e:
+            yield f"API Error: {str(e)}"
+        except Exception as e:
+            yield f"Unexpected Error: {str(e)}"
 
     def process_image_and_text(self, image, person_details, max_tokens=1000, system_prompt=None):
         """
