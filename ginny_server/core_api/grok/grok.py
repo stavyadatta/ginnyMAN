@@ -64,6 +64,7 @@ class _GrokHandler:
         :param max_tokens: Maximum tokens for response
         :returns: returns response 
         """
+        print("Is it entring img_text_response\n\n")
         img_base64 = self._encode_image(image)
         img_text_dict = self.develop_last_message(text, img_base64)
         if system_prompt == None:
@@ -80,12 +81,14 @@ class _GrokHandler:
                 max_tokens=max_tokens,
                 stream=False
             )
-            return response.choices[0].message.content
+            content = response.choices[0].message.content
+            print("The content is ", content)
+            return content
 
         except openai.OpenAIError as e:
-            yield f"API Error: {str(e)}"
+            return f"API Error: {str(e)}"
         except Exception as e:
-            yield f"Unexpected Error: {str(e)}"
+            return f"Unexpected Error: {str(e)}"
 
     def process_image_and_text(self, image, person_details, max_tokens=1000, system_prompt=None):
         """
@@ -139,21 +142,38 @@ class _GrokHandler:
         :param img_base64: Base64 encoded image string
         :return: Updated last message dictionary
         """
-        return {
-            "role": last_message.get("role"),
-            "content": [
-                {
-                    "type": "text",
-                    "text": last_message.get("content")
-                },
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/png;base64,{img_base64}"
+        if isinstance(last_message, str):
+            return {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": last_message
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{img_base64}"
+                        }
                     }
-                }
-            ]
-        }
+                ]
+            }
+        else:
+            return {
+                "role": last_message.get("role"),
+                "content": [
+                    {
+                        "type": "text",
+                        "text": last_message.get("content")
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{img_base64}"
+                        }
+                    }
+                ]
+            }
 
     def _develop_system_prompt(self):
         """

@@ -3,6 +3,9 @@ import grpc
 import traceback
 import queue
 
+# When calling stub.GetImg use it like this self.stub.GetImg(Empty())
+from ginny_server.core_api import Grok, YOLODetector
+
 from grpc_communication.pepper_auto_pb2 import ImageChunk, ConfirmationChunk, ExecuteParam, SentenceParam
 from grpc_communication.pepper_auto_pb2_grpc import PepperAutoStub
 from ginny_server.core_api import ChatGPT, Grok, YOLODetector
@@ -10,6 +13,11 @@ from ginny_server.core_api import ChatGPT, Grok, YOLODetector
 class AutoPepper:
     def __init__(self, stub: PepperAutoStub):
         self.stub = stub
+
+        # Grok, ChatGPT and YOLODetector are objects, not classes, no need to declare
+        self.yolo = YOLODetector
+        self.grok = Grok
+        self.chatgpt = ChatGPT
 
     def __call__(self):
         # Write your code here

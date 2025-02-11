@@ -41,7 +41,7 @@ ChatGPT (use the img_text_response) for generating a response
 {chatgpt}
 ```
 
-Grok (use the img_text_response) for generating a response
+Grok (use the img_text_response) for generating a response (prefer grok for image related captions)
 
 ```
 {grok}

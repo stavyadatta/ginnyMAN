@@ -126,9 +126,9 @@ class _OpenAIHandler:
             return response.choices[0].message.content
 
         except openai.OpenAIError as e:
-            yield f"API Error: {str(e)}"
+            return f"API Error: {str(e)}"
         except Exception as e:
-            yield f"Unexpected Error: {str(e)}"
+            return f"Unexpected Error: {str(e)}"
 
 
     def send_text_get_json(self, messages: list[dict], stream: bool, img=None, max_tokens=500, model="gpt-4o"):
@@ -162,21 +162,38 @@ class _OpenAIHandler:
         :param img_base64: Base64 encoded image string
         :return: Updated last message dictionary
         """
-        return {
-            "role": last_message.get("role"),
-            "content": [
-                {
-                    "type": "text",
-                    "text": last_message.get("content")
-                },
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": f"data:image/png;base64,{img_base64}"
+        if isinstance(last_message, str):
+            return {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": last_message
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{img_base64}"
+                        }
                     }
-                }
-            ]
-        }
+                ]
+            }
+        else:
+            return {
+                "role": last_message.get("role"),
+                "content": [
+                    {
+                        "type": "text",
+                        "text": last_message.get("content")
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{img_base64}"
+                        }
+                    }
+                ]
+            }
 
     def _develop_system_prompt(self):
         """
