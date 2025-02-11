@@ -262,21 +262,23 @@ class Pepper():
         print("Pepper resources have been cleaned up.")
 
 def pepper_auto_server(pepper):
+    print("Is entering the function?")
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     pepper_pb2_grpc.add_PepperAutoServicer_to_server(
         PepperAutoController(pepper),
         server
     )
+    print("Auto servicer is added to the stuff")
 
     server.add_insecure_port("[::]:50051")
-    print("gRPC Pepper Auto on port 50051")
+    print("Is the grpc up?")
 
     try:
         server.start()
         server.wait_for_termination()
     except KeyboardInterrupt:
         print("Shutting down server")
-    server.stop(0)
+        server.stop(0)
 
 
 if __name__ == "__main__":
@@ -294,34 +296,39 @@ if __name__ == "__main__":
     p = Pepper(pepper_connection_url, stub, secondary_stub)
     image_thread = Thread(target=p.capture_and_stream_images, args=()) 
     image_thread.daemon = True
-    image_thread.start()
+    # image_thread.start()
 
     head_thread = Thread(target=p.head_management, args=())
     head_thread.daemon = True
-    head_thread.start()
+    # head_thread.start()
+
+    # pepper_auto_thread = Thread(target=pepper_auto_server, args=(p, ))
+    # pepper_auto_thread.daemon = True
+    # pepper_auto_thread.start()
+    pepper_auto_server(p)
     
-    try:
-        while True:
-            p.send_audio_video()
-            p.receive_llm_response()
-    except KeyboardInterrupt:
-        p.close()
-        print("Program interrupted by user.")
-        queue_response = stub.ClearQueue(Empty())
-        if queue_response.removed:
-            print("server queue is cleaned")
-        else:
-            print("Some issue in the cleaning the server queue")
-        exit()
-        image_thread.join()
-        head_thread.join()
-    except Exception as e:
-        # Ensure resources are cleaned up
-        print("the p close is getting called because of the following issues ", e)
-        queue_response = stub.ClearQueue(Empty())
-        if queue_response.removed:
-            print("server queue is cleaned")
-        else:
-            print("Some issue in the cleaning the server queue")
-        traceback.print_exc()
-        p.close()
+    # try:
+    #     while True:
+    #         p.send_audio_video()
+    #         p.receive_llm_response()
+    # except KeyboardInterrupt:
+    #     p.close()
+    #     print("Program interrupted by user.")
+    #     queue_response = stub.ClearQueue(Empty())
+    #     if queue_response.removed:
+    #         print("server queue is cleaned")
+    #     else:
+    #         print("Some issue in the cleaning the server queue")
+    #     exit()
+    #     image_thread.join()
+    #     head_thread.join()
+    # except Exception as e:
+    #     # Ensure resources are cleaned up
+    #     print("the p close is getting called because of the following issues ", e)
+    #     queue_response = stub.ClearQueue(Empty())
+    #     if queue_response.removed:
+    #         print("server queue is cleaned")
+    #     else:
+    #         print("Some issue in the cleaning the server queue")
+    #     traceback.print_exc()
+    #     p.close()

@@ -169,8 +169,3 @@ if __name__ == "__main__":
         # Ensure resources are cleaned up
         print("the p close is getting called because of the following issues ", e)
         traceback.print_exc()
-
-
-
-
-
