@@ -95,5 +95,10 @@ class SpeechProcessor:
                         pepper.custom_movement(sentence_to_say)
                     elif mode == "standard_movement":
                         pepper.standard_movement(sentence_to_say)
+                    elif mode == "pepper_auto":
+                        pepper.not_send_imgs.set()
+                        # there will be a function which will basically wait 
+                        # for the whole thing to finish and then start again
+                        pepper.not_send_imgs.clear()
 
         self.do_movement.clear()

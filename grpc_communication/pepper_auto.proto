@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+service PepperAuto {
+    rpc GetImg(google.protobuf.Empty) returns (ImageChunk);
+
+    rpc ExecuteAction(ExecuteParam) returns (ConfirmationChunk);
+
+    rpc RobotSay(SentenceParam) returns (ConfirmationChunk);
+}
+
+message ImageChunk {
+    bytes image_data=1;
+}
+
+message ConfirmationChunk {
+    bool confirmed=1;
+}
+
+message ExecuteParam {
+  string joint_name=1;
+  float angle=2;
+  float speed=3;
+}
+
+message SentenceParam {
+    string sentence_to_say=1;
+}

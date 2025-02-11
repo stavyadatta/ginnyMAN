@@ -10,15 +10,19 @@ import argparse
 import numpy as np
 from PIL import Image
 from io import BytesIO
-from threading import Thread, Lock
+from threading import Thread, Lock, Event
 from google.protobuf.empty_pb2 import Empty
+from concurrent import futures
 
 
+import grpc_communication.pepper_auto_pb2_grpc as pepper_pb2_grpc
+import grpc_communication.pepper_auto_pb2 as pepper_pb2
 from grpc_communication.grpc_pb2 import AudioImgRequest, ImageStreamRequest
 from grpc_communication.grpc_pb2_grpc import MediaServiceStub, SecondaryChannelStub
 from pepper_api import CameraManager, AudioManager2, HeadManager, EyeLEDManager, \
     SpeechManager, CustomMovement, StandardMovement
 from utils import SpeechProcessor
+from pepper_auto import PepperAutoController
 
 logging.basicConfig(filename="app.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -54,8 +58,8 @@ class Pepper():
         self.session.registerService("CameraManager", self.camera_manager)
         self.life_service.setAutonomousAbilityEnabled("All", False)
 
-        # Make img compatible thread lock 
-        self._lock = Lock()
+        self.not_send_imgs = Event()
+
 
     def get_image(self):
         return self.camera_manager.get_image(raw=True)
@@ -90,27 +94,31 @@ class Pepper():
     def center_head(self):
         pass
 
+    def img_stream(self):
+        cv2_image = self.make_img_compatible()
+        height, width, _ = cv2_image.shape
+        _, image_data = cv2.imencode(".jpg", cv2_image)
+
+        request = ImageStreamRequest(
+            image_data=image_data.tobytes(),
+            image_format="JPEG",
+            image_width=width,
+            image_height=height,
+            image_description="Captured pepper image"
+        )
+
+        # Send the image stream request
+        try:
+            self.stub.StreamImages(iter([request]))
+        except grpc.RpcError as e:
+            logger.error("Failed to stream image: {}".format(e.details()))
+        time.sleep(0.1)
+
     def capture_and_stream_images(self):
         try:
             while True:
-                cv2_image = self.make_img_compatible()
-                height, width, _ = cv2_image.shape
-                _, image_data = cv2.imencode(".jpg", cv2_image)
-
-                request = ImageStreamRequest(
-                    image_data=image_data.tobytes(),
-                    image_format="JPEG",
-                    image_width=width,
-                    image_height=height,
-                    image_description="Captured pepper image"
-                )
-
-                # Send the image stream request
-                try:
-                    self.stub.StreamImages(iter([request]))
-                except grpc.RpcError as e:
-                    logger.error("Failed to stream image: {}".format(e.details()))
-                time.sleep(0.1)
+                if not self.not_send_imgs.is_set():
+                    self.img_stream()
         except KeyboardInterrupt:
             logger.info("Stopping image streaming...")
             raise KeyboardInterrupt()
@@ -252,6 +260,24 @@ class Pepper():
         del self.eye_led_manager
         self.session.close()
         print("Pepper resources have been cleaned up.")
+
+def pepper_auto_server(pepper):
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    pepper_pb2_grpc.add_PepperAutoServicer_to_server(
+        PepperAutoController(pepper),
+        server
+    )
+
+    server.add_insecure_port("[::]:50051")
+    print("gRPC Pepper Auto on port 50051")
+
+    try:
+        server.start()
+        server.wait_for_termination()
+    except KeyboardInterrupt:
+        print("Shutting down server")
+    server.stop(0)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Please enter Pepper's IP address (and optional port number)")
