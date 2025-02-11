@@ -5,7 +5,7 @@ from .person_attr import _PersonAttribute
 from .bad_input import _BadInput
 from .movement import _CustomMovement, _StandardMovement
 from .secondary_channel import _SecondaryChannel
-from .pepper_auto import PepperAuto
+from .pepper_auto import _PepperAuto
 
 Speaking = _Speaking()
 Silent = _Silent()
@@ -14,6 +14,7 @@ BadInput = _BadInput()
 CustomMovement = _CustomMovement()
 StandardMovement = _StandardMovement()
 SecondaryChannel = _SecondaryChannel()
+PepperAuto = _PepperAuto()
 
 api_call: dict[str, ApiBase] = {
     "speak": Speaking,

@@ -76,7 +76,7 @@ class _OpenAIHandler:
         except Exception as e:
             yield f"Unexpected Error: {str(e)}"
 
-    def send_text(self, messages: list[dict], stream: bool, img=None, model="gpt-4o"):
+    def send_text(self, messages: list[dict], stream: bool, img=None, model="gpt-4o", max_tokens=500):
         """
             :param messages: A dictionary of messages for additional context to be 
              provided to the model for benefit
@@ -90,7 +90,7 @@ class _OpenAIHandler:
             response = self.client.chat.completions.create(
                 model=model,
                 messages=messages,
-                max_tokens=500,
+                max_tokens=max_tokens,
                 stream=stream
             )
             return response
