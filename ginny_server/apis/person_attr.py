@@ -18,7 +18,12 @@ class _PersonAttribute(ApiBase):
             assert cropped_person is not None
 
             # response = ChatGPT.process_image_and_text(cropped_person, person_details)
-            response = Grok.process_image_and_text(cropped_person, person_details)
+            try:
+                response = Grok.process_image_and_text(cropped_person, person_details)
+            except Exception as e:
+                print("grok failed ", e)
+                response = ChatGPT.process_image_and_text(cropped_person, person_details)
+
             llm_response = ""
             for chunk in response:
                 llm_response += chunk
