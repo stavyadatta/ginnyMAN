@@ -54,7 +54,7 @@ class _FaceRecognition:
 
     def _initialize_face_analysis(self) -> FaceAnalysis:
         """Initialize the InsightFace FaceAnalysis object and load models."""
-        providers = [('CUDAExecutionProvider', {"device_id": 2}), 'CPUExecutionProvider'] \
+        providers = [('CUDAExecutionProvider', {"device_id": 0}), 'CPUExecutionProvider'] \
             if torch.cuda.is_available() else ['CPUExecutionProvider']
         app = FaceAnalysis(name=self.model_name, providers=providers)
         app.prepare(ctx_id=0 if torch.cuda.is_available() else -1)
