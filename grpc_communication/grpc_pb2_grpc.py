@@ -77,14 +77,9 @@ class MediaServiceStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.SendAudioImg = channel.unary_unary(
-                '/MediaService/SendAudioImg',
+        self.ProcessAudioImg = channel.unary_stream(
+                '/MediaService/ProcessAudioImg',
                 request_serializer=grpc__pb2.AudioImgRequest.SerializeToString,
-                response_deserializer=grpc__pb2.AudioImgResponse.FromString,
-                )
-        self.LLmResponse = channel.unary_stream(
-                '/MediaService/LLmResponse',
-                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
                 response_deserializer=grpc__pb2.TextChunk.FromString,
                 )
         self.StreamImages = channel.stream_unary(
@@ -107,15 +102,8 @@ class MediaServiceStub(object):
 class MediaServiceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def SendAudioImg(self, request, context):
+    def ProcessAudioImg(self, request, context):
         """RPC method to send audio and image data together
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def LLmResponse(self, request, context):
-        """New RPC method to send audio data and stream text response
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -145,14 +133,9 @@ class MediaServiceServicer(object):
 
 def add_MediaServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'SendAudioImg': grpc.unary_unary_rpc_method_handler(
-                    servicer.SendAudioImg,
+            'ProcessAudioImg': grpc.unary_stream_rpc_method_handler(
+                    servicer.ProcessAudioImg,
                     request_deserializer=grpc__pb2.AudioImgRequest.FromString,
-                    response_serializer=grpc__pb2.AudioImgResponse.SerializeToString,
-            ),
-            'LLmResponse': grpc.unary_stream_rpc_method_handler(
-                    servicer.LLmResponse,
-                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                     response_serializer=grpc__pb2.TextChunk.SerializeToString,
             ),
             'StreamImages': grpc.stream_unary_rpc_method_handler(
@@ -181,7 +164,7 @@ class MediaService(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
-    def SendAudioImg(request,
+    def ProcessAudioImg(request,
             target,
             options=(),
             channel_credentials=None,
@@ -191,25 +174,8 @@ class MediaService(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/MediaService/SendAudioImg',
+        return grpc.experimental.unary_stream(request, target, '/MediaService/ProcessAudioImg',
             grpc__pb2.AudioImgRequest.SerializeToString,
-            grpc__pb2.AudioImgResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
-
-    @staticmethod
-    def LLmResponse(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_stream(request, target, '/MediaService/LLmResponse',
-            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             grpc__pb2.TextChunk.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

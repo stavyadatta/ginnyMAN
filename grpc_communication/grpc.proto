@@ -9,10 +9,7 @@ service SecondaryChannel {
 
 service MediaService {
     // RPC method to send audio and image data together
-    rpc SendAudioImg(AudioImgRequest) returns (AudioImgResponse);
-
-    // New RPC method to send audio data and stream text response
-    rpc LLmResponse(google.protobuf.Empty) returns (stream TextChunk);
+    rpc ProcessAudioImg(AudioImgRequest) returns (stream TextChunk);
 
     // RPC method to handle image streams
     rpc StreamImages(stream ImageStreamRequest) returns (google.protobuf.Empty);
