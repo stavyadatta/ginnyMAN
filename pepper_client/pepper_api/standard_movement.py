@@ -35,7 +35,6 @@ class StandardMovement:
             "jgangnamstyle",
             "la_bamba",
             "mika_relax",
-            "Vacuum",
             "walk_this_way"
         ]
         return random.choice(dance_types)
