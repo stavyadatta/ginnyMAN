@@ -7,7 +7,7 @@ from concurrent import futures
 from threading import Thread
 
 from core_api import FaceRecognition, WhisperSpeech2Text
-from utils import MediaManager, IMAGE_QUEUE_LEN
+from media_manager import MediaManager, IMAGE_QUEUE_LEN
 from secondary_channel import SecondaryGRPC
 from executor import Executor
 from reasoner import Reasoner

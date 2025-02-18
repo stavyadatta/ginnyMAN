@@ -8,7 +8,9 @@ import traceback
 import numpy as np
 from google.protobuf.empty_pb2 import Empty
 
-from core_api import FaceRecognition
+from core_api import FaceRecognition, WhisperSpeech2Text
+from executor import Executor
+from reasoner import Reasoner
 from grpc_pb2 import AudioImgResponse, TextChunk, FaceBoundingBox, QueueRemoval
 from grpc_pb2_grpc import MediaServiceServicer
 
@@ -61,7 +63,40 @@ class MediaManager(MediaServiceServicer):
             print("Error decoding image: {}".format(e))
             return None
 
-    def SendAudioImg(self, request, context):
+    def _getting_response(self, audio_img_item):
+        if audio_img_item is None:
+            return None
+        try:
+            transcription = WhisperSpeech2Text(audio_img_item)
+            if len(transcription) < 2:
+                transcription= "You"
+            print(f"Transcription: {transcription}")
+            if len(transcription) < 2:
+                transcription = "You"
+
+            # Get the face information 
+            image = audio_img_item.get("image_data")
+            cv2.imwrite("/workspace/database/face_db/some.jpg", image)
+            face_id = FaceRecognition.get_most_frequent_face_id(image_queue)
+
+            person_details = Reasoner(transcription, face_id)
+            if person_details.get_attribute("state") == "vision":
+                person_details.set_image(image)
+
+            print("Executor response:")
+            response = Executor(person_details)
+            mode = 'default'
+            for response_chunk in response:
+                mode = response_chunk.mode
+                response_text = response_chunk.textchunk
+                print(response_text, end='', flush=True)
+                yield TextChunk(text=response_text, is_final=False, mode=mode)
+
+        except Exception as e:
+            print(f"Error processing audio: {e}")
+            traceback.print_exc()
+
+    def ProcessAudioImg(self, request, context):
         try:
             audio_data = request.audio_data
             sample_rate = request.sample_rate
@@ -85,31 +120,26 @@ class MediaManager(MediaServiceServicer):
             image_bytes = request.image_data
             image = self._decode_image_from_bytes(image_bytes)
             if image is None:
-                return AudioImgResponse(
-                    status="error",
-                    message="The image came out as None"
+                return TextChunk(
+                    mode="error",
+                    text="The image came out as None"
                 )
-
-            self.audio_img_queue.put({
+            audio_img_object = {
                 "audio_data": request.audio_data,
                 "sample_rate": request.sample_rate,
                 "num_channels": request.num_channels,
                 "encoding": request.audio_encoding,
                 "description": request.audio_description,
                 "image_data": image
-            })
+            }
 
-            return AudioImgResponse(
-                status='success',
-                message='Audio and Image data received successfully'
-            ) 
         except Exception as e:
             error_trace = traceback.format_exc()
             print("Error occurred while processing data: {}".format(error_trace))
 
-            return AudioImgResponse(
-                status='error',
-                message="An error occured: {}\nTraceback:\n{}".format(str(e), error_trace)
+            return TextChunk(
+                mode="error",
+                text=f"Some error occured {e}"
             )
 
     def LLmResponse(self, request, context):
