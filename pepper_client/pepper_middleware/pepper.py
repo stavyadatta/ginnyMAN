@@ -180,6 +180,7 @@ class Pepper():
             last_frame = self.make_img_compatible()
         except TypeError:
             print("Send audio was not receiving last frame")
+            self.stub.ClearQueue(Empty())
             self.send_audio_video()
         try:
             height, width, _ = last_frame.shape

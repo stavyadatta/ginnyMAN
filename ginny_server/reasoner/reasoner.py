@@ -85,7 +85,11 @@ class _Reasoner:
 
             # response = Llama.send_to_model(total_prompt, stream=False)
             # response = ChatGPT.send_text(total_prompt, stream=False)
-            response = Grok.send_text(total_prompt, stream=False)
+            try:
+                response = Grok.send_text(total_prompt, stream=False)
+            except Exception as e:
+                print("grok failed ", e)
+                response = ChatGPT.send_text(total_prompt, stream=False)
             response_text = response.choices[0].message.content
             if response_text not in ("no change", "no change."):
                 print("State:", response_text)
