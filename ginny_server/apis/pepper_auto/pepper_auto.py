@@ -20,15 +20,16 @@ class _PepperAuto(ApiBase):
         
         # response = Llama.send_to_model(total_prompt, stream=False)
         # response = ChatGPT.send_text_get_json(total_prompt, stream=False, max_tokens=2000)
+        yield ApiObject("Starting", stream=False, mode="pepper_auto")
         response = ChatGPT.send_text(total_prompt, stream=False, max_tokens=5000, model="o3-mini")
 
         content = response.choices[0].message.content
         print(content)
-        yield ApiObject(content, stream=False, mode='pepper_auto')
 
         write_python_file("/workspace/ginnyMAN/pepper_auto/run.py", content)
         try:
             subprocess.run(["python", "pepper_auto/run.py"])
+            yield ApiObject("Done", stream=False, mode='pepper_auto')
         except subprocess.CalledProcessError as e:
             print("Error executing script.py:", e)
             print("Standard Error Output:\n", e.stderr)
