@@ -45,7 +45,7 @@ class SpeechProcessor:
                 # When not moving, you might want to sleep briefly to prevent busy-waiting
                 time.sleep(0.1)
 
-    def build_sentences(self, response_stream, pepper):
+    def build_sentences(self, response_stream):
         """
         Build sentences from streamed words and add them to the queue.
         :param response_stream: gRPC response stream from LLM.

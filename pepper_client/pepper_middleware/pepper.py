@@ -172,7 +172,30 @@ class Pepper():
             print("Some error in head_management, donot know ", e)
             traceback.print_exc()
 
-    def send_audio_video(self):
+    def process_server_response(self, server_response_stream):
+        speech_processor = SpeechProcessor(self.speech_manager.say, self.standard_movement)
+        builder_thread = Thread(
+            target=speech_processor.build_sentences, 
+            args=(server_response_stream,)
+        )
+        speaker_thread = Thread(
+            target=speech_processor.execute_response,
+            args=(self,)
+        )
+
+        builder_thread.start()
+        speaker_thread.start()
+
+        # Wait for threads to complete
+        builder_thread.join()
+        speech_processor.is_running = False
+        speaker_thread.join()
+        speech_processor.to_execute_movement_thread = False
+        self.posture_service.goToPosture("StandInit", 0.2)
+        
+        speech_processor.body_thread.join()
+
+    def main(self):
         audio_data, sample_rate = self.get_audio()
         height, width = 240, 320
         last_frame = np.zeros((height, width, 3), dtype=np.uint8)
@@ -180,8 +203,7 @@ class Pepper():
             last_frame = self.make_img_compatible()
         except TypeError:
             print("Send audio was not receiving last frame")
-            self.stub.ClearQueue(Empty())
-            self.send_audio_video()
+            self.main()
         try:
             height, width, _ = last_frame.shape
             _, image_data = cv2.imencode(".jpg", last_frame)
@@ -203,7 +225,8 @@ class Pepper():
 
             # Send the request to the gRPC server
             try:
-                response = self.stub.SendAudioImg(request)
+                server_response_stream = self.stub.ProcessAudioImg(request)
+                self.process_server_response(server_response_stream)
             except grpc.RpcError as e:
                 print("gRPC in sending audio error: {} - {}".format(e.code(), e.details()))
 
@@ -211,35 +234,7 @@ class Pepper():
         except UnboundLocalError as e:
             print("Unbounded local error occuring")
             traceback.print_exc()
-            self.stub.ClearQueue(Empty())
-            self.send_audio_video()
-
-    def receive_llm_response(self):
-        speech_processor = SpeechProcessor(self.speech_manager.say, self.standard_movement)
-        
-        request = Empty()
-        response_stream = self.stub.LLmResponse(request)
-
-        builder_thread = Thread(
-            target=speech_processor.build_sentences, 
-            args=(response_stream, self,)
-        )
-        speaker_thread = Thread(
-            target=speech_processor.execute_response,
-            args=(self,)
-        )
-
-        builder_thread.start()
-        speaker_thread.start()
-
-        # Wait for threads to complete
-        builder_thread.join()
-        speech_processor.is_running = False
-        speaker_thread.join()
-        speech_processor.to_execute_movement_thread = False
-        self.posture_service.goToPosture("StandInit", 0.2)
-        
-        speech_processor.body_thread.join()
+            self.main()
 
     def close(self):
         # Shut down services and clean up resources
@@ -307,21 +302,13 @@ if __name__ == "__main__":
     try:
         # Main loop: send audio and video and process LLM responses
         while True:
-            p.send_audio_video()
-            p.receive_llm_response()
+            p.main()
     except KeyboardInterrupt:
         print("Program interrupted by user.")
         p.close()
-        queue_response = stub.ClearQueue(Empty())
-        if queue_response.removed:
-            print("Server queue has been cleaned.")
-        else:
-            print("There was an issue cleaning the server queue.")
-        # Optionally join threads if needed:
         image_thread.join()
         head_thread.join()
     except Exception as e:
         print("An error occurred:", e)
         traceback.print_exc()
         p.close()
-
