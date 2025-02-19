@@ -10,11 +10,10 @@ class _PepperAuto(ApiBase):
         super().__init__()
 
     def _developing_system_prompt(self):
-        system_prompt = movement_prompt
         system_dict = message_format("system", system_prompt)
         return [system_dict]
 
-    def __call__(self, person_details: PersonDetails) -> Any:
+    def __call__(self, person_details: PersonDetails):
         messages = person_details.get_attribute("messages")
         system_dict = self._developing_system_prompt()
         total_prompt = system_dict + [messages[-1]]
@@ -25,6 +24,7 @@ class _PepperAuto(ApiBase):
 
         content = response.choices[0].message.content
         print(content)
+        yield ApiObject(content, stream=False, mode='pepper_auto')
 
         write_python_file("/workspace/ginnyMAN/pepper_auto/run.py", content)
         try:

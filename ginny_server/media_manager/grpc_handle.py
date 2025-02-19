@@ -17,11 +17,9 @@ from grpc_pb2_grpc import MediaServiceServicer
 IMAGE_QUEUE_LEN = 50
 
 class MediaManager(MediaServiceServicer):
-    def __init__(self, audio_img_queue, llama_response_queue, image_queue, audio_save=False):
+    def __init__(self, image_queue, audio_save=False):
         super().__init__()
-        self.audio_img_queue = audio_img_queue
         self.audio_save = audio_save
-        self.llama_response_queue = llama_response_queue
         self.image_queue = image_queue
 
         if self.audio_save:
@@ -77,7 +75,7 @@ class MediaManager(MediaServiceServicer):
             # Get the face information 
             image = audio_img_item.get("image_data")
             cv2.imwrite("/workspace/database/face_db/some.jpg", image)
-            face_id = FaceRecognition.get_most_frequent_face_id(image_queue)
+            face_id = FaceRecognition.get_most_frequent_face_id(self.image_queue)
 
             person_details = Reasoner(transcription, face_id)
             if person_details.get_attribute("state") == "vision":
@@ -95,11 +93,10 @@ class MediaManager(MediaServiceServicer):
         except Exception as e:
             print(f"Error processing audio: {e}")
             traceback.print_exc()
+            yield TextChunk(text='error', mode='error')
 
     def ProcessAudioImg(self, request, context):
         try:
-            audio_data = request.audio_data
-            sample_rate = request.sample_rate
             file_name = f"audio_{int(time.time())}.wav"  # Unique file name using timestamp
             encoding_map = {
                 "PCM_8": 1,   # 8-bit audio
@@ -120,11 +117,12 @@ class MediaManager(MediaServiceServicer):
             image_bytes = request.image_data
             image = self._decode_image_from_bytes(image_bytes)
             if image is None:
-                return TextChunk(
+                yield TextChunk(
                     mode="error",
                     text="The image came out as None"
                 )
-            audio_img_object = {
+                return
+            audio_img_item = {
                 "audio_data": request.audio_data,
                 "sample_rate": request.sample_rate,
                 "num_channels": request.num_channels,
@@ -132,6 +130,8 @@ class MediaManager(MediaServiceServicer):
                 "description": request.audio_description,
                 "image_data": image
             }
+            pipe_response = self._getting_response(audio_img_item)
+            yield pipe_response
 
         except Exception as e:
             error_trace = traceback.format_exc()
