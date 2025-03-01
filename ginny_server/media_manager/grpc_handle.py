@@ -88,12 +88,12 @@ class MediaManager(MediaServiceServicer):
                 mode = response_chunk.mode
                 response_text = response_chunk.textchunk
                 print(response_text, end='', flush=True)
-                yield TextChunk(text=response_text, is_final=False, mode=mode)
+                yield (response_text, mode)
 
         except Exception as e:
             print(f"Error processing audio: {e}")
             traceback.print_exc()
-            yield TextChunk(text='error', mode='error')
+            yield ("error", "error")
 
     def ProcessAudioImg(self, request, context):
         try:
@@ -116,7 +116,9 @@ class MediaManager(MediaServiceServicer):
 
             image_bytes = request.image_data
             image = self._decode_image_from_bytes(image_bytes)
+            print("Image has been decoded I think")
             if image is None:
+                print("Is the image coming as None")
                 yield TextChunk(
                     mode="error",
                     text="The image came out as None"
@@ -131,7 +133,10 @@ class MediaManager(MediaServiceServicer):
                 "image_data": image
             }
             pipe_response = self._getting_response(audio_img_item)
-            yield pipe_response
+            for resp in pipe_response:
+                response_text = resp[0]
+                mode = resp[1]
+                yield TextChunk(text=response_text, is_final=False, mode=mode)
 
         except Exception as e:
             error_trace = traceback.format_exc()

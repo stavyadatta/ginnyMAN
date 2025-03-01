@@ -15,6 +15,11 @@ class _Neo4j:
     def close(self):
         self.driver.close()
 
+    def read_query_single(self, query, **params):
+        with self.driver.session() as session:
+            return session.run(query, **params).data()
+
+
     def create_or_update_person(self, face_id=None, name=None, state='speak'):
             with self.driver.session() as session:
                 session.run(
@@ -73,28 +78,3 @@ class _Neo4j:
         except Exception as e:
             print(f"Error in add_message_to_person: {e}")
             traceback.print_exc()
-
-    # def add_message_to_person_bkp(self, face_id, user, message):
-    #     try:
-    #         with self.driver.session() as session:
-    #             result = session.run(
-    #                 """
-    #                 MATCH (p:Person {face_id: $face_id})
-    #                 RETURN p.messages AS messages
-    #                 """,
-    #                 face_id=face_id
-    #             )
-    #             record = result.single()
-    #             existing_messages = json.loads(record["messages"]) if record and record["messages"] else []
-    #             existing_messages.append({"user": user, "message": message})
-    #             session.run(
-    #                 """
-    #                 MATCH (p:Person {face_id: $face_id})
-    #                 SET p.messages = $updated_messages
-    #                 """,
-    #                 face_id=face_id,
-    #                 updated_messages=json.dumps(existing_messages)
-    #             )
-    #     except Exception as e:
-    #         print("Error in add_message_to_person:")
-    #         traceback.print_exc()

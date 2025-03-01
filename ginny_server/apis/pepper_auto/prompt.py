@@ -10,9 +10,12 @@ def read_python_file(file_path):
 
 def write_python_file(file_path, content):
     """Writes content to a Python file while preserving indentation."""
+    lines = content.strip().split("\n")  # Split into lines
+    code_lines = lines[1:-1]  # Remove the first and last line
+    code = "\n".join(code_lines)
     try:
         with open(file_path, 'w', encoding='utf-8') as file:
-            file.write(content)
+            file.write(code)
     except Exception as e:
         print(f"Error writing file: {e}")
 

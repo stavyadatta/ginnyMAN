@@ -6,7 +6,7 @@ import tempfile
 import atexit
 
 class _WhisperSpeech2Text:
-    def __init__(self, model_name="base"):
+    def __init__(self, model_name="large-v3"):
         """
         Initialize the Whisper model for speech-to-text.
         """

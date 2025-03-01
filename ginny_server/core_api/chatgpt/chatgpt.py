@@ -76,6 +76,28 @@ class _OpenAIHandler:
         except Exception as e:
             yield f"Unexpected Error: {str(e)}"
 
+
+    def send_o1(self, messages: list[dict], stream: bool, img=None, model="o1-preview"):
+        """
+            :param messages: A dictionary of messages for additional context to be 
+             provided to the model for benefit
+            :param stream: Whether to stream the output or not
+            :param img: incase of VLM adding an image for additional context
+
+            :return: Generator of words from llm incase of stream otherwise whole text 
+                output
+        """
+        try:
+            response = self.client.chat.completions.create(
+                model=model,
+                messages=messages,
+                stream=stream
+            )
+            return response
+        except openai.OpenAIError as e:
+            return f"API Error: {str(e)}"
+
+
     def send_text(self, messages: list[dict], stream: bool, img=None, model="gpt-4o", max_tokens=500):
         """
             :param messages: A dictionary of messages for additional context to be 

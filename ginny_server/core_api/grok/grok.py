@@ -35,7 +35,7 @@ class _GrokHandler:
         return encoded_image
 
 
-    def send_text(self, messages: list[dict], stream: bool, img=None, grok_model="grok-2-vision-1212"):
+    def send_text(self, messages: list[dict], stream: bool, img=None, grok_model="grok-2"):
         """
             :param messages: A dictionary of messages for additional context to be 
              provided to the model for benefit

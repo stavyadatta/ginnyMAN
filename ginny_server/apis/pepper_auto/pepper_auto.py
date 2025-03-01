@@ -10,7 +10,7 @@ class _PepperAuto(ApiBase):
         super().__init__()
 
     def _developing_system_prompt(self):
-        system_dict = message_format("system", system_prompt)
+        system_dict = message_format("user", system_prompt)
         return [system_dict]
 
     def __call__(self, person_details: PersonDetails):
@@ -20,16 +20,16 @@ class _PepperAuto(ApiBase):
         
         # response = Llama.send_to_model(total_prompt, stream=False)
         # response = ChatGPT.send_text_get_json(total_prompt, stream=False, max_tokens=2000)
-        yield ApiObject("Starting", stream=False, mode="pepper_auto")
-        response = ChatGPT.send_text(total_prompt, stream=False, max_tokens=5000, model="o3-mini")
+        yield ApiObject("Starting", mode="pepper_auto")
+        response = ChatGPT.send_o1(total_prompt, stream=False, model="gpt-4o")
 
         content = response.choices[0].message.content
         print(content)
 
-        write_python_file("/workspace/ginnyMAN/pepper_auto/run.py", content)
+        write_python_file("/workspace/pepper_auto/run.py", content)
         try:
             subprocess.run(["python", "pepper_auto/run.py"])
-            yield ApiObject("Done", stream=False, mode='pepper_auto')
+            yield ApiObject("Done", mode='pepper_auto')
         except subprocess.CalledProcessError as e:
             print("Error executing script.py:", e)
             print("Standard Error Output:\n", e.stderr)
