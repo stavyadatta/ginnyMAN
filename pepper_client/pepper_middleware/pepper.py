@@ -269,7 +269,6 @@ def pepper_auto_server(pepper):
         server.stop(0)
         raise KeyboardInterrupt
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Please enter Pepper's IP address (and optional port number)")
     parser.add_argument("--ip", type=str, nargs='?', default="192.168.0.52")
