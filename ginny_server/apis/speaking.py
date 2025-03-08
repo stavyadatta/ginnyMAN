@@ -66,5 +66,3 @@ class _Speaking(ApiBase):
         llm_dict = message_format("assistant", llm_response)
         person_details.add_message(llm_dict)
         Neo4j.add_message_to_person(person_details)
-
-

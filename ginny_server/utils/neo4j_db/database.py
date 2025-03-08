@@ -15,10 +15,13 @@ class _Neo4j:
     def close(self):
         self.driver.close()
 
-    def read_query_single(self, query, **params):
+    def read_query(self, query, **params):
         with self.driver.session() as session:
             return session.run(query, **params).data()
 
+    def write_query(self, query, **params):
+        with self.driver.session() as session:
+            session.run(query, **params)
 
     def create_or_update_person(self, face_id=None, name=None, state='speak'):
             with self.driver.session() as session:
