@@ -1,6 +1,6 @@
 from typing import Any
 
-from core_api import Llama, ChatGPT, Grok, Claude
+from core_api import Llama, ChatGPT, Grok, Claude , RelationshipChecker
 from httpx import stream
 from utils import PersonDetails, Neo4j, message_format, ApiObject
 from .api_base import ApiBase
@@ -9,8 +9,8 @@ class _Speaking(ApiBase):
     def __init__(self) -> None:
         super().__init__()
 
-    def _developing_system_prompt(self):
-        system_prompt = """
+    def _developing_system_prompt(self, person_name, person_attributes):
+        system_prompt = f"""
             Your are playing the role of Ginny robot which is a humanoid, as part of this 
             role you are a supposed to have friendly human conversations similar to 
             how people on facebook messenger chat.
@@ -37,15 +37,24 @@ class _Speaking(ApiBase):
             input: Hey how are you 
             output: I am good, great to see you <name> how are you doing
             ```
+
+            Here are some more details about the person 
+
+            name: {person_name}
+            person_attributes: {person_attributes}
         """
 
         system_dict = message_format("system", system_prompt)
         return [system_dict]
         
     def __call__(self, person_details: PersonDetails) -> Any:
-        messages = person_details.get_attribute("messages")
-        system_dict = self._developing_system_prompt()
-        total_prompt = messages + system_dict 
+        face_id = person_details.get_attribute("face_id")
+        latest_msg = person_details.get_latest_user_message()
+        messages = Neo4j.get_person_messages(latest_msg, face_id)
+        person_attributes = person_details.get_attribute("attributes")
+        person_name = person_details.get_attribute("name")
+        system_dict = self._developing_system_prompt(person_name, person_attributes)
+        total_prompt = system_dict + messages 
         
         # response = Llama.send_to_model(total_prompt, stream=True)
         # response = ChatGPT.send_text(total_prompt, stream=True, model='gpt-4-turbo')
@@ -64,5 +73,6 @@ class _Speaking(ApiBase):
                 yield ApiObject(content)
         
         llm_dict = message_format("assistant", llm_response)
-        person_details.add_message(llm_dict)
+        person_details.set_latest_llm_message(llm_dict)
         Neo4j.add_message_to_person(person_details)
+        RelationshipChecker.adding_text2relationship_checker(person_details)

@@ -16,9 +16,9 @@ class _CustomMovement(ApiBase):
         return [system_dict]
         
     def __call__(self, person_details: PersonDetails) -> Any:
-        messages = person_details.get_attribute("messages")
+        latest_usr_message = person_details.get_latest_user_message()
         system_dict = self._developing_system_prompt()
-        total_prompt = system_dict + [messages[-1]]
+        total_prompt = system_dict + [latest_usr_message]
         
         print("The total prompt is ", total_prompt)
         # response = Llama.send_to_model(total_prompt, stream=False)
@@ -28,6 +28,6 @@ class _CustomMovement(ApiBase):
         yield ApiObject(response.choices[0].message.content, mode='custom_movement') 
 
         llm_dict = message_format("assistant", "The movement has been performed")
-        person_details.add_message(llm_dict)
+        person_details.set_latest_llm_message(llm_dict)
         person_details.set_attribute("state", "speak")
         Neo4j.add_message_to_person(person_details)

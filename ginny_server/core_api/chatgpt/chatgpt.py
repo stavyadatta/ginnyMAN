@@ -32,6 +32,15 @@ class _OpenAIHandler:
 
         return encoded_image
 
+    def get_openai_embedding(self, text):
+        """Generates OpenAI embedding for a given text."""
+        response = self.client.embeddings.create(
+            input=text,
+            model="text-embedding-3-small"
+        )
+        return response.data[0].embedding
+
+
     def process_image_and_text(self, image, person_details, max_tokens=1000, system_prompt=None, model_name='gpt-4o'):
         """
         Process an image and text prompt using OpenAI API with streaming.
@@ -43,8 +52,7 @@ class _OpenAIHandler:
         """
         # Encode the image
         img_base64 = self._encode_image(image)
-        all_but_last_message = person_details.get_attribute("messages")[:-1]
-        last_message = person_details.get_attribute("messages")[-1]
+        last_message = person_details.get_latest_user_message()
 
         # Develop the last message including the image
         last_dict = self.develop_last_message(last_message, img_base64)
@@ -54,15 +62,13 @@ class _OpenAIHandler:
             system_prompt = self._develop_system_prompt()
 
         # Combine messages for the API call
-        total_prompt = all_but_last_message + [last_dict]
-
         try:
             # Start streaming response
             response = self.client.chat.completions.create(
                 model=model_name,
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    *total_prompt
+                    last_dict
                 ],
                 max_tokens=max_tokens,
                 stream=True
@@ -75,7 +81,6 @@ class _OpenAIHandler:
             yield f"API Error: {str(e)}"
         except Exception as e:
             yield f"Unexpected Error: {str(e)}"
-
 
     def send_o1(self, messages: list[dict], stream: bool, img=None, model="o1-preview"):
         """
@@ -93,6 +98,8 @@ class _OpenAIHandler:
                 messages=messages,
                 stream=stream
             )
+            if isinstance(response, str):
+                raise Exception("chatgpt did not respond, returned str ", response)
             return response
         except openai.OpenAIError as e:
             return f"API Error: {str(e)}"
@@ -115,6 +122,8 @@ class _OpenAIHandler:
                 max_tokens=max_tokens,
                 stream=stream
             )
+            if isinstance(response, str):
+                raise Exception("chatgpt did not respond, returned str ", response)
             return response
         except openai.OpenAIError as e:
             return f"API Error: {str(e)}"
@@ -171,6 +180,8 @@ class _OpenAIHandler:
                 stream=stream,
                 response_format={"type": "json_object"}
             )
+            if isinstance(response, str):
+                raise Exception("Chatgpt did not respond, only str ", response)
             return response
         except openai.OpenAIError as e:
             return f"API Error: {str(e)}"

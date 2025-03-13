@@ -53,6 +53,8 @@ class _GrokHandler:
             top_p=0.9,
             stream=stream
         )
+        if isinstance(response, str):
+            raise Exception("Grok did not respond, returned str ", response)
         return response
 
     def img_text_response(self, image, text, max_tokens=1000, system_prompt=None):
@@ -81,6 +83,8 @@ class _GrokHandler:
                 max_tokens=max_tokens,
                 stream=False
             )
+            if isinstance(response, str):
+                raise Exception("chatgpt did not respond, returned str ", response)
             content = response.choices[0].message.content
             print("The content is ", content)
             return content
@@ -101,8 +105,7 @@ class _GrokHandler:
         """
         # Encode the image
         img_base64 = self._encode_image(image)
-        all_but_last_message = person_details.get_attribute("messages")[:-1]
-        last_message = person_details.get_attribute("messages")[-1]
+        last_message = person_details.get_latest_user_message()
 
         # Develop the last message including the image
         last_dict = self.develop_last_message(last_message, img_base64)
@@ -112,15 +115,13 @@ class _GrokHandler:
             system_prompt = self._develop_system_prompt()
 
         # Combine messages for the API call
-        total_prompt = all_but_last_message + [last_dict]
-
         try:
             # Start streaming response
             response = self.client.chat.completions.create(
                 model="grok-2-vision-1212",
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    total_prompt[-1]
+                    last_dict
                 ],
                 max_tokens=max_tokens,
                 stream=True

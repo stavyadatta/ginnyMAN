@@ -2,6 +2,8 @@ class PersonDetails:
     def __init__(self, person_dict: dict={}) -> None:
         self.person_dict = person_dict
         self.image = None
+        self.latest_usr_msg = {}
+        self.latest_llm_msg = {}
 
     def __bool__(self):
         return bool(self.person_dict)
@@ -15,6 +17,22 @@ class PersonDetails:
     def get_attribute(self, field: str):
         return self.person_dict.get(field, [])
 
+    def get_latest_user_message(self):
+        return self.latest_usr_msg
+
+    def get_latest_llm_message(self):
+        return self.latest_llm_msg
+
+    def set_latest_usr_message(self, text):
+        self.latest_usr_msg = text
+
+    def set_latest_llm_message(self, llm_msg: dict):
+        """
+            Sets llm message to the llm variable to be used by Neo4j 
+            database when adding messages to the linked list
+        """
+        self.latest_llm_msg = llm_msg
+
     def set_attribute(self, update_field: str, update_string: str):
         """
             The function updates the person details within the object
@@ -27,16 +45,6 @@ class PersonDetails:
         else:
             raise Exception("The person object is empty")
 
-    def add_message(self, additional_message: dict):
-        """
-            The message that needs to be added to the person details dictionary item
-
-            :param additional_message: The message that needs to be added to the 
-        """
-        if self.person_dict:
-            self.person_dict["messages"].append(additional_message)
-        else:
-            raise Exception("Detail of the person is not found, nothing to add")
 
     def set_image(self, image):
         self.image = image

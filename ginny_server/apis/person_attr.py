@@ -30,7 +30,7 @@ class _PersonAttribute(ApiBase):
                 yield ApiObject(chunk)
         
             llm_dict = message_format("assistant", llm_response)
-            person_details.add_message(llm_dict)
+            person_details.set_latest_llm_message(llm_dict)
             person_details.set_attribute("state", "speak")
             Neo4j.add_message_to_person(person_details)
 

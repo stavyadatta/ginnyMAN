@@ -132,8 +132,8 @@ class MediaManager(MediaServiceServicer):
                 "description": request.audio_description,
                 "image_data": image
             }
-            pipe_response = self._getting_response(audio_img_item)
-            for resp in pipe_response:
+            pipeline_response = self._getting_response(audio_img_item)
+            for resp in pipeline_response:
                 response_text = resp[0]
                 mode = resp[1]
                 yield TextChunk(text=response_text, is_final=False, mode=mode)
@@ -146,20 +146,6 @@ class MediaManager(MediaServiceServicer):
                 mode="error",
                 text=f"Some error occured {e}"
             )
-
-    def LLmResponse(self, request, context):
-        try:
-            while True:
-                chunk = self.llama_response_queue.get()
-                if chunk is None:
-                    break
-                yield TextChunk(text=chunk['text'], is_final=chunk['is_final'], mode=chunk["mode"])
-                if chunk['is_final']:
-                    break
-        except Exception as e:
-            print(f"Error in the LLmResponse: {e}")
-            yield TextChunk(text="Error, no text received", is_final=True)
-
 
     def StreamImages(self, request_iterator, context):
         """
