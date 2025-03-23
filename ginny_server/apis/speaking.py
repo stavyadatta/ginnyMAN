@@ -1,7 +1,6 @@
 from typing import Any
 
-from core_api import Llama, ChatGPT, Grok, Claude , RelationshipChecker
-from httpx import stream
+from core_api import ChatGPT, Grok, RelationshipChecker, AttributeFinder
 from utils import PersonDetails, Neo4j, message_format, ApiObject
 from .api_base import ApiBase
 
@@ -57,7 +56,6 @@ class _Speaking(ApiBase):
         total_prompt = system_dict + messages 
         
         # response = Llama.send_to_model(total_prompt, stream=True)
-        # response = ChatGPT.send_text(total_prompt, stream=True, model='gpt-4-turbo')
         try:
             response = Grok.send_text(total_prompt, stream=True, grok_model="grok-2-1212")
         except Exception as e:
@@ -76,3 +74,4 @@ class _Speaking(ApiBase):
         person_details.set_latest_llm_message(llm_dict)
         Neo4j.add_message_to_person(person_details)
         RelationshipChecker.adding_text2relationship_checker(person_details)
+        AttributeFinder.adding_text2attr_finder(person_details)
