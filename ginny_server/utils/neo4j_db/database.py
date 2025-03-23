@@ -30,13 +30,14 @@ class _Neo4j:
 
     def update_name_attribute(self, face_id, name=None, attributes=None):
         query = """
-
             MERGE (p:Person {face_id: $face_id})
-            SET 
-                p.name = COALESCE($name, p.name)
+            ON MATCH SET 
+                p.name = CASE 
+                            WHEN $name IS NULL OR trim($name) = '' THEN p.name 
+                            ELSE $name 
+                        END,
                 p.attributes = COALESCE($attributes, p.attributes)
             """
-
         self.write_query(query, face_id=face_id, name=name, attributes=attributes)
 
     def create_or_update_person(self, face_id=None, name=None, state='speak'):
@@ -95,7 +96,7 @@ class _Neo4j:
                     "name": record.get("name"),
                     "messages": json.loads(record["messages"]) if record.get("messages") else [],
                     "state": record.get("state"),
-                    "attributes": json.loads(record["attributes"]) if record.get("attributes") else []
+                    "attributes": record.get("attributes")
                 })
             else:
                 return PersonDetails() 

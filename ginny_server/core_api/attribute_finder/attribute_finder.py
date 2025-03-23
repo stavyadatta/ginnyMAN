@@ -24,6 +24,9 @@ class _AttributeFinder():
             person_details = self.possible_attr_queue.get()
             text_message = person_details.get_latest_user_message()
             person_attributes = person_details.get_attribute("attributes")
+            if person_attributes == None:
+                person_attributes = []
+
             face_id = person_details.get_attribute("face_id")
 
             from core_api import ChatGPT
@@ -50,6 +53,8 @@ class _AttributeFinder():
 
             # Adding the attribute to the existing attributes list
             person_attributes.append(output_attribute)
+
+            print("These are the attributes going in ", person_attributes, attribute_bool, name_bool)
 
             if attribute_bool or name_bool:
                 Neo4j.update_name_attribute(face_id=face_id, 
