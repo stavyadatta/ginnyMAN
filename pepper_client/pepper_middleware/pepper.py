@@ -230,7 +230,6 @@ class Pepper():
             except grpc.RpcError as e:
                 print("gRPC in sending audio error: {} - {}".format(e.code(), e.details()))
 
-            time.sleep(1)  # Adjust delay as needed
         except UnboundLocalError as e:
             print("Unbounded local error occuring")
             traceback.print_exc()
