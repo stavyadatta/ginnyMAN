@@ -8,7 +8,7 @@ import traceback
 import numpy as np
 from google.protobuf.empty_pb2 import Empty
 
-from core_api import FaceRecognition, WhisperSpeech2Text
+from core_api import FaceRecognition, WhisperSpeech2Text, ClipClassification
 from executor import Executor
 from reasoner import Reasoner
 from grpc_pb2 import AudioImgResponse, TextChunk, FaceBoundingBox, QueueRemoval
@@ -70,12 +70,15 @@ class MediaManager(MediaServiceServicer):
                 transcription= "You"
             print(f"Transcription: {transcription}")
             if len(transcription) < 2:
+                # If the transcription is less than 2 characters 
+                # it will send a word which will automatically be 
+                # categorised as bad input
                 transcription = "You"
 
             # Get the face information 
             image = audio_img_item.get("image_data")
             cv2.imwrite("/workspace/database/face_db/some.jpg", image)
-            face_id = FaceRecognition.get_most_frequent_face_id(self.image_queue)
+            face_id = FaceRecognition.get_most_frequent_face_id()
 
             person_details = Reasoner(transcription, face_id)
             if person_details.get_attribute("state") == "vision":
@@ -155,8 +158,10 @@ class MediaManager(MediaServiceServicer):
             for request in request_iterator:
                 image = self._decode_image_from_bytes(request.image_data)
                 if image is not None:
-                    # Add image to the queue
-                    self.image_queue.append(image)
+                    # Add image to the Face and Clip queues
+                    FaceRecognition.add2face_img_queue(image)
+                    ClipClassification.add2clip_img_queue(image)
+
         except Exception as e:
             traceback.print_exc()
         return Empty()

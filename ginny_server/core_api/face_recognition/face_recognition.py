@@ -5,6 +5,8 @@ import logging
 import argparse
 import numpy as np
 from pathlib import Path
+from queue import Queue
+from threading import Thread
 from collections import deque
 from typing import List, Tuple, Optional
 from insightface.app import FaceAnalysis
@@ -46,6 +48,21 @@ class _FaceRecognition:
 
         # Load database embeddings
         self.known_ids, self.known_embeddings = self._load_database()
+
+        self.face_img_queue = Queue(maxsize=15)
+        self.face_id_queue = deque(maxlen=15)
+        self.save_img_queue = deque(maxlen=15)
+        self.face_embedding_queue = deque(maxlen=15)
+
+        face_recognition_thread = Thread(
+            target=self._face_recognition_on_queue,
+            daemon=True
+        )
+
+        face_recognition_thread.start()
+
+    def add2face_img_queue(self, image):
+        self.face_img_queue.put(image)
 
     def _ensure_db_directory(self):
         """Ensure that the database directory exists."""
@@ -192,11 +209,24 @@ class _FaceRecognition:
         """
         return self._save_new_face(embedding, img, save_img=True)
 
+    def _face_recognition_on_queue(self):
+        while True:
+            img = self.face_img_queue.get()
+
+            try:
+                recognized_id, emb = self.recognize_face_no_enroll(img)
+            except ValueError as e:
+                continue
+
+            self.face_id_queue.append(recognized_id)
+            self.face_embedding_queue.append(emb)
+            self.save_img_queue.append(img)
+
     ############################################################################
     #            Modified method that does the voting over 10 frames           #
     ############################################################################
 
-    def get_most_frequent_face_id(self, image_queue: deque) -> Optional[str]:
+    def get_most_frequent_face_id(self) -> Optional[str]:
         """
         Process up to the last 10 images in the queue, attempt to recognize each face
         WITHOUT immediately enrolling any new face. If the final "winner" is None or
@@ -206,23 +236,9 @@ class _FaceRecognition:
         Returns:
             Optional[str]: The most frequent recognized face ID or a newly enrolled ID.
         """
-        if len(image_queue) == 0:
-            logging.warning("No image queue")
-            raise Exception("There are no images in the image queue")
-        
-        recent_images = list(image_queue)[-10:]
-        face_ids = []
-        embeddings = []
-
-        # 1) Recognize (but do NOT enroll yet)
-        for img in recent_images:
-            try:
-                recognized_id, emb = self.recognize_face_no_enroll(img)
-                face_ids.append(recognized_id)
-                embeddings.append(emb)
-            except ValueError as e:
-                # No face found in this image
-                logging.warning(f"No face found in one of the images: {e}")
+        recent_images = list(self.save_img_queue)[-10:]
+        face_ids = list(self.face_id_queue)[-10:]
+        embeddings = list(self.face_embedding_queue)[-10:]
 
         if len(face_ids) == 0:
             return None
@@ -300,11 +316,16 @@ def main():
         return
 
     recognizer = _FaceRecognition()
+    import time
+    start_time = time.time()
     try:
         embedding = recognizer._get_embedding(img)
     except ValueError as e:
         logging.error(f"Face detection failed: {e}")
         return
+    end_time = time.time()
+    print(f"Batch prediction took {(end_time - start_time) * 1000:.2f} ms")
+    exit()
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)

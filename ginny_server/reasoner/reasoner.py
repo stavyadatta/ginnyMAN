@@ -2,7 +2,7 @@ import traceback
 from typing import Optional
 
 from utils import Neo4j, PersonDetails, message_format
-from core_api import Llama, ChatGPT, Grok
+from core_api import Llama, ChatGPT, Grok, ClipClassification
 from .prompt import reasoner_prompt
 
 class _Reasoner:
@@ -34,6 +34,19 @@ class _Reasoner:
         user_prompt = message_format("user", text)
         return [user_prompt]
 
+    def _bad_input_handler(self, response_text):
+        face_class = ClipClassification.get_most_face_class()
+        print("The face class is ", face_class)
+        if response_text == "bad input":
+            if face_class in {"side_face", "no_face", "slight_side_face"}:
+                return "bad input"
+            else:
+                return "speak"
+        else:
+            if face_class in {"side_face", "no_face", "slight_side_face"}:
+                return "bad input"
+        return response_text
+
     def __call__(self, transcription, face_id: Optional[str], img=None) -> PersonDetails:
         """
             Running the reasoner and deciding on what APIs need to be run 
@@ -63,6 +76,7 @@ class _Reasoner:
                 print("grok failed ", e)
                 response = ChatGPT.send_text(total_prompt, stream=False)
             response_text = response.choices[0].message.content
+            response_text = self._bad_input_handler(response_text)
             if response_text not in ("no change", "no change."):
                 print("State:", response_text)
                 person_details.set_attribute("state", response_text)
@@ -74,5 +88,3 @@ class _Reasoner:
             print(f"Error in reasoning section: {e}")
             traceback.print_exc()
             raise Exception(e)
-
-

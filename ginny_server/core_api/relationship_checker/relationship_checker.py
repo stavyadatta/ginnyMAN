@@ -1,6 +1,6 @@
 import json
-from threading import Thread
 from queue import Queue
+from threading import Thread
 
 from utils import PersonDetails, Neo4j, message_format, name_similarity
 from .prompt import relationship_check_prompt
