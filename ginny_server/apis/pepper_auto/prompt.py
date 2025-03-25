@@ -7,7 +7,6 @@ def read_python_file(file_path):
         print(f"Error reading file: {e}")
         return None
 
-
 def write_python_file(file_path, content):
     """Writes content to a Python file while preserving indentation."""
     lines = content.strip().split("\n")  # Split into lines

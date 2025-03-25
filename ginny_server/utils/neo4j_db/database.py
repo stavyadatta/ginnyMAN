@@ -28,6 +28,18 @@ class _Neo4j:
         with self.driver.session() as session:
             session.run(query, **params)
 
+    def update_name_attribute(self, face_id, name=None, attributes=None):
+        query = """
+            MERGE (p:Person {face_id: $face_id})
+            ON MATCH SET 
+                p.name = CASE 
+                            WHEN $name IS NULL OR trim($name) = '' THEN p.name 
+                            ELSE $name 
+                        END,
+                p.attributes = COALESCE($attributes, p.attributes)
+            """
+        self.write_query(query, face_id=face_id, name=name, attributes=attributes)
+
     def create_or_update_person(self, face_id=None, name=None, state='speak'):
         from core_api import ChatGPT
         query = """
@@ -36,7 +48,7 @@ class _Neo4j:
                 ON MATCH SET 
                     p.messages = COALESCE(p.messages, '[]'),
                     p.state = COALESCE($state, p.state),
-                    p.attributes = COALESCE($attributes, '[]')
+                    p.attributes = COALESCE(p.attributes, '[]')
                 SET p.name = COALESCE($name, p.name)
 
                 WITH p
@@ -52,11 +64,13 @@ class _Neo4j:
         """
         assistant_text = "Hello"
         assistant_embedding = ChatGPT.get_openai_embedding(assistant_text)
+        assistant_message_id = str(uuid.uuid4())
 
         with self.driver.session() as session:
             session.run(
                 query, face_id=face_id, name=name, state=state,
-                assistant_text=assistant_text, assistant_embedding=assistant_embedding
+                assistant_text=assistant_text, assistant_embedding=assistant_embedding,
+                assistant_message_id=assistant_message_id
             )
         self.update_db_name_list()
         print("Created a new person")
@@ -123,7 +137,7 @@ class _Neo4j:
                p.attributes AS attributes,
                score, 
                message.message_number as message_number,
-               [n IN nodes(window) | {message_id: n.message_id, text: n.text, role: n.role, message_number: n.message_number}] AS chain
+               nodes(window) as chain
         """
 
         from utils import message_format
@@ -131,12 +145,12 @@ class _Neo4j:
         from core_api import ChatGPT
         query_embedding = ChatGPT.get_openai_embedding(text)
 
+
         results = self.read_query(cosine_query, query_embedding=query_embedding, 
                                   top_k=top_k, face_id=face_id)
         messages = []
         message_set = set()
         message_num_list = []
-
 
         for idx, row in enumerate(results):
             for msg in row["chain"]:
@@ -158,7 +172,7 @@ class _Neo4j:
             MATCH (p)-[:MESSAGE]->(m:Message)
             WITH m
             MATCH window = (m0:Message)-[NEXT*0..20]->(m)
-            RETURN [n IN nodes(window) | {message_id: n.message_id, text: n.text, role: n.role, message_number: n.message_number}] AS chain
+            RETURN nodes(window) as chain
         """
         from utils import message_format
 
@@ -184,8 +198,7 @@ class _Neo4j:
             past 20 messages along with the latest message at the end
         """
         # Message is in format {"<user>": "<message>"}
-        print("The latest message is ", latest_message)
-        latest_text = latest_message["role"]
+        latest_text = latest_message["content"]
 
         cos_msgs, cos_msg_num_list = self.get_cos_msgs(latest_text, face_id)
 
@@ -204,6 +217,7 @@ class _Neo4j:
 
         # Adding the latest_message to list 
         merged_messages.append(latest_message)
+
         return merged_messages
 
     def add_message_to_person(self, person_details: PersonDetails):
@@ -265,7 +279,6 @@ class _Neo4j:
         usr_message_id = str(uuid.uuid4())
 
         llm_dict = person_details.get_latest_llm_message()
-        print("The llm dict is this ", llm_dict)
         llm_txt = llm_dict.get("content")
 
         if llm_txt is not None:
@@ -297,8 +310,3 @@ class _Neo4j:
     def adding_text2relationship_checker(self, person_details: PersonDetails):
         latest_usr_msg = person_details.get_latest_user_message()
         self.relationship_queue.put(latest_usr_msg)
-
-    def relationship_checker(self):
-        while True:
-            text = self.relationship_queue.get()
-

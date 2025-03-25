@@ -6,6 +6,7 @@ from .yolo import _PersonDetectorCropper, _YOLODetector
 from .chatgpt import _OpenAIHandler
 from .grok import _GrokHandler
 from .relationship_checker import _RelationshipChecker
+from .attribute_finder import _AttributeFinder
 
 FaceRecognition = _FaceRecognition()
 WhisperSpeech2Text = _WhisperSpeech2Text()
@@ -16,6 +17,7 @@ Claude = _ClaudeImageProcessor()
 ChatGPT = _OpenAIHandler()
 Grok = _GrokHandler()
 RelationshipChecker = _RelationshipChecker()
+AttributeFinder = _AttributeFinder()
 
 __all__ = ["FaceRecognition", 
            "WhisperSpeech2Text", 
@@ -25,7 +27,8 @@ __all__ = ["FaceRecognition",
            "Claude", 
            "ChatGPT", 
            "Grok",
-           "RelationshipChecker"
+           "RelationshipChecker",
+           "AttributeFinder"
            ]
 
 
