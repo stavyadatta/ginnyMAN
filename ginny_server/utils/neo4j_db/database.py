@@ -220,6 +220,37 @@ class _Neo4j:
 
         return merged_messages
 
+    def reset_person_message(self, face_id: str):
+        from core_api import ChatGPT
+
+        reset_person_query = """
+            CALL {
+                MATCH (m:Message {face_id: $face_id})
+                DETACH DELETE m
+            }
+
+            MERGE (p:Person {face_id: $face_id})
+            CREATE (newMessage:Message {
+                message_id: $message_id,
+                message_number: $message_number,
+                role: $role,
+                text: $text,
+                face_id: $face_id,
+                embedding: $embedding
+            })
+            MERGE (p)-[:MESSAGE]->(newMessage)
+
+        """
+        message_id = str(uuid.uuid4())
+        message_number = 0
+        role = "assistant"
+        text = "Hello"
+        embedding = ChatGPT.get_openai_embedding(text)
+        
+        self.write_query(reset_person_query, 
+                         message_id=message_id, message_number=message_number,
+                         role=role, text=text, embedding=embedding)
+
     def add_message_to_person(self, person_details: PersonDetails):
         from core_api import ChatGPT
 
