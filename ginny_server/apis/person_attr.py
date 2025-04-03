@@ -2,7 +2,7 @@ from utils import ApiObject
 from .api_base import ApiBase
 
 from utils import PersonDetails, Neo4j, message_format
-from core_api import PersonDetectionCropper, ChatGPT, Grok
+from core_api import PersonDetectionCropper, ChatGPT, Grok, RelationshipChecker, AttributeFinder
 
 class _PersonAttribute(ApiBase):
     def __init__(self) -> None:
@@ -33,6 +33,8 @@ class _PersonAttribute(ApiBase):
             person_details.set_latest_llm_message(llm_dict)
             person_details.set_attribute("state", "speak")
             Neo4j.add_message_to_person(person_details)
+            RelationshipChecker.adding_text2relationship_checker(person_details)
+            AttributeFinder.adding_text2attr_finder(person_details)
 
         except Exception as e:
             raise Exception(f"Exception in the _PersonAttribute {e}")
