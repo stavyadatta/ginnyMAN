@@ -216,6 +216,9 @@ class _FaceRecognition:
             try:
                 recognized_id, emb = self.recognize_face_no_enroll(img)
             except ValueError as e:
+                self.face_id_queue.append(None)
+                self.face_embedding_queue.append(None)
+                self.save_img_queue.append(None)
                 continue
 
             self.face_id_queue.append(recognized_id)

@@ -58,6 +58,7 @@ class _ClipClassification():
                 pred = predictions[0]
             except Exception as e:
                 print('This is the error in clip_classification', e)
+                self.face_class_queue.append("no_face")
                 continue
 
             score = pred.get("score")
