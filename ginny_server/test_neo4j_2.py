@@ -75,7 +75,7 @@ def main(face_id):
 if __name__ == "__main__":
     get_name_query = """
         MATCH (p:Person)
-        WHERE p.face_id = "face_1"
+        WHERE p.face_id <> "face_1"
         RETURN p.face_id as face_id
     """
     results = Neo4j.read_query(get_name_query)

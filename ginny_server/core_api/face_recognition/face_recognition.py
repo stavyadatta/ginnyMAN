@@ -59,7 +59,7 @@ class _FaceRecognition:
             daemon=True
         )
 
-        # face_recognition_thread.start()
+        face_recognition_thread.start()
 
     def add2face_img_queue(self, image):
         self.face_img_queue.put(image)
