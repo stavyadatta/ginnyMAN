@@ -39,12 +39,12 @@ class _Reasoner:
         print("The face class is ", face_class)
         if response_text == "bad input":
             if face_class in {"side_face", "no_face", "slight_side_face"}:
-                return "bad input"
+                return "speak"
             else:
                 return "speak"
         else:
             if face_class in {"side_face", "no_face", "slight_side_face"}:
-                return "bad input"
+                return "speak"
         return response_text
 
     def __call__(self, transcription, face_id: Optional[str], img=None) -> PersonDetails:

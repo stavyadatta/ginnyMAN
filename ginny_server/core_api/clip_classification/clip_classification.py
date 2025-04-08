@@ -39,7 +39,7 @@ class _ClipClassification():
             top_pred = max(preds, key=lambda x: x['score'])
 
             # Use the label only if confidence is at least 0.5
-            if top_pred['score'] >= 0.5:
+            if top_pred['score'] >= 0.4:
                 labels.append(top_pred['label'])
             else:
                 labels.append("no_face")
