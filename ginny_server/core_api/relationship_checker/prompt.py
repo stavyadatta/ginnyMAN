@@ -23,7 +23,8 @@ relationship_check_prompt = """
     ```
 
     You need give your output in JSON format, please take inspiration from the examples 
-    below 
+    below, remember names relationships themselves cannot be named, this means that 
+    someone cannot have a name like "girlfriend", "sister", "mother", "father", "friend"
 
     ```
         input: "Hamid is my supervisor"

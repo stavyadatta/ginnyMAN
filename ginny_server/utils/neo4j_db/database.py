@@ -156,7 +156,11 @@ class _Neo4j:
     def get_people_without_face_id(self, name):
         query = """ 
             MATCH (p:Person {name: $name})
-            RETURN exists(p.face_id) as hasFaceID
+            RETURN 
+            CASE
+                WHEN p.face_id IS NOT NULL THEN true
+                ELSE false
+            END as hasFaceID
         """
         result = self.read_query(query, name=name)
 

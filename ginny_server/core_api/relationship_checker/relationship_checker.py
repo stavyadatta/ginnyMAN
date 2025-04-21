@@ -88,3 +88,4 @@ class _RelationshipChecker:
             print("The relationship query parameter is going to execute ", query_param, query)
 
             Neo4j.write_query(query, **query_param)
+            Neo4j.update_db_name_list()

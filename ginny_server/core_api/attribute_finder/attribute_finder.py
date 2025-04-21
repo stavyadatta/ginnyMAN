@@ -32,7 +32,7 @@ class _AttributeFinder():
             raise e
 
         friend_name_content = response.choices[0].message.content
-        friend_name_dict = json.load(friend_name_content)
+        friend_name_dict = json.loads(friend_name_content)
         return friend_name_dict
 
     def third_person_update(self, person_details: PersonDetails, output_attribute):
@@ -51,7 +51,7 @@ class _AttributeFinder():
         closest_name = RelationshipChecker.compare_name2db_names(friend_name)
         friend_current_attributes_query = """ 
             MATCH  (p:Person {name: $name})
-            RETURN id(p) AS pid, p.attributes AS attributes
+            RETURN elementId(p) AS pid, p.attributes AS attributes
             LIMIT 1
         """
         friend_result = Neo4j.read_query(
@@ -87,34 +87,106 @@ class _AttributeFinder():
         else:
             return False
 
-    def merging_nodes(self, p1_person_details: PersonDetails, p2_person_name):
-        query = """ 
-            MATCH (p1:Person {face_id: $face_id}), (p2:Person {name: $name})
-            WHERE id(p1) <> id(p2)
-            WITH p1, p2, apoc.coll.toSet(p1.attributes + p2.attributes) AS mergedAttributes
-            SET p1.attributes = mergedAttributes,
-                p1.name = p2.name
-            CALL {
-                WITH p1, p2
-                MATCH (n)-[r]->(p2)
-                MERGE (n)-[newR:TYPE(r)]->(p1)
-                SET newR = r
-                DELETE r
-            }
-            CALL {
-                WITH p1, p2
-                MATCH (p2)-[r]->(n)
-                MERGE (p1)-[newR:TYPE(r)]->(n)
-                SET newR = r
-                DELETE r
-            }
-            DELETE p2
-        """
-        p1_face_id = p1_person_details.get_attribute("face_id")
-        Neo4j.write_query(query, name=p2_person_name, face_id=p1_face_id)
+    def merging_nodes(self,
+                      p1_person_details: PersonDetails,
+                      p2_person_name: str) -> None:
+        face_id = p1_person_details.get_attribute("face_id")
+
+        # 1. fetch elementIds and attribute lists
+        records = Neo4j.read_query(
+            """
+            MATCH (p1:Person {face_id:$face_id}),
+                  (p2:Person {name:$name})
+            WHERE elementId(p1) <> elementId(p2)
+            RETURN elementId(p1) AS p1_eid,
+                   elementId(p2) AS p2_eid,
+                   p1.attributes AS attrs1,
+                   p2.attributes AS attrs2
+            """,
+            face_id=face_id,
+            name=p2_person_name
+        )
+        if not records:
+            return
+        rec     = records[0]
+        p2_eid  = rec["p2_eid"]
+        attrs1  = rec.get("attrs1") or []
+        attrs2  = rec.get("attrs2") or []
+
+        # 2. merge + dedupe attributes
+        merged_attrs = list(dict.fromkeys(attrs1 + attrs2))
+
+        # 3. update p1’s attributes & name
+        Neo4j.write_query(
+            """
+            MATCH (p1:Person {face_id:$face_id})
+            SET p1.attributes = $merged_attrs,
+                p1.name       = $new_name
+            """,
+            face_id=face_id,
+            merged_attrs=merged_attrs,
+            new_name=p2_person_name
+        )
+
+        # 4a. reattach incoming rels from p2 to p1
+        incoming = Neo4j.read_query(
+            """
+            MATCH (p2)<-[r]-(n)
+            WHERE elementId(p2) = $p2_eid
+            RETURN elementId(n) AS nid, type(r) AS rtype, properties(r) AS props
+            """,
+            p2_eid=p2_eid
+        )
+        for rel in incoming:
+            nid, rtype, props = rel["nid"], rel["rtype"], rel["props"]
+            Neo4j.write_query(
+                """
+                MATCH (p1:Person {face_id:$face_id}), (n)
+                WHERE elementId(n) = $nid
+                CREATE (n)-[newR:`%s`]->(p1)
+                SET newR = $props
+                """ % rtype,
+                face_id=face_id,
+                nid=nid,
+                props=props
+            )
+
+        # 4b. reattach outgoing rels from p2 to p1
+        outgoing = Neo4j.read_query(
+            """
+            MATCH (p2)-[r]->(n)
+            WHERE elementId(p2) = $p2_eid
+            RETURN elementId(n) AS nid, type(r) AS rtype, properties(r) AS props
+            """,
+            p2_eid=p2_eid
+        )
+        for rel in outgoing:
+            nid, rtype, props = rel["nid"], rel["rtype"], rel["props"]
+            Neo4j.write_query(
+                """
+                MATCH (p1:Person {face_id:$face_id}), (n)
+                WHERE elementId(n) = $nid
+                CREATE (p1)-[newR:`%s`]->(n)
+                SET newR = $props
+                """ % rtype,
+                face_id=face_id,
+                nid=nid,
+                props=props
+            )
+
+        # 5. delete p2 by elementId
+        Neo4j.write_query(
+            """
+            MATCH (p2)
+            WHERE elementId(p2) = $p2_eid
+            DETACH DELETE p2
+            """,
+            p2_eid=p2_eid
+        )
 
     def attr_checker(self):
         from core_api import RelationshipChecker
+        from core_api import ChatGPT
         while True:
             person_details = self.possible_attr_queue.get()
             text_message = person_details.get_latest_user_message()
@@ -123,7 +195,6 @@ class _AttributeFinder():
             if person_attributes == None:
                 person_attributes = []
 
-            from core_api import ChatGPT
 
             system_text = get_attr_prompt(person_attributes)
             system_message = message_format("system", system_text)
@@ -151,15 +222,27 @@ class _AttributeFinder():
 
             print("These are the attributes going in ", person_attributes, attribute_bool, name_bool)
 
+            # For checking if the attributes are being described for a third person 
+            # who is friend, th expectation is of using pronounds like She or He
             if check_friend:
-                self.third_person_update(person_details, output_attribute)
+                try:
+                    self.third_person_update(person_details, output_attribute)
+                except Exception as e:
+                    print(e)
+                    continue
 
             if attribute_bool or name_bool:
-                if name_bool and self.have_I_heard_about_you(input_name):
-                    closest_name = RelationshipChecker.compare_name2db_names(input_name)
-                    self.merging_nodes(person_details, closest_name)
-                else:
-                    Neo4j.update_name_or_attribute(face_id=face_id, 
-                                                name=input_name, 
-                                                attributes=person_attributes
-                                            )
+                # If the person has been talked aboout before by someone else 
+                # then use this
+                try:
+                    if name_bool and self.have_I_heard_about_you(input_name):
+                        closest_name = RelationshipChecker.compare_name2db_names(input_name)
+                        self.merging_nodes(person_details, closest_name)
+                    else:
+                        Neo4j.update_name_or_attribute(face_id=face_id, 
+                                                    name=input_name, 
+                                                    attributes=person_attributes
+                                                )
+                except Exception as e:
+                    print(e)
+                    continue
