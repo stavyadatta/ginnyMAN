@@ -19,7 +19,7 @@ class _RelationshipChecker:
     def adding_text2relationship_checker(self, person_details: PersonDetails):
         self.relationship_queue.put(person_details)
 
-    def _compare_name2db_names(self, name):
+    def compare_name2db_names(self, name, threshold=55):
         db_names = Neo4j.get_db_people_names()
         highest_ratio = -1
         closest_name = None
@@ -29,7 +29,7 @@ class _RelationshipChecker:
                 highest_ratio = ratio
                 closest_name = db_name
 
-        if highest_ratio > 55:
+        if highest_ratio > threshold:
             print("The clostest name is ", closest_name)
             return closest_name
         else:
@@ -39,7 +39,7 @@ class _RelationshipChecker:
     def find_similar_name(self, name_list):
         new_names = []
         for name in name_list:
-            closest_name = self._compare_name2db_names(name)
+            closest_name = self.compare_name2db_names(name)
             new_names.append(closest_name)
         return new_names
         

@@ -28,17 +28,28 @@ class _Neo4j:
         with self.driver.session() as session:
             session.run(query, **params)
 
-    def update_name_attribute(self, face_id, name=None, attributes=None):
-        query = """
-            MERGE (p:Person {face_id: $face_id})
-            ON MATCH SET 
-                p.name = CASE 
-                            WHEN $name IS NULL OR trim($name) = '' THEN p.name 
-                            ELSE $name 
-                        END,
-                p.attributes = COALESCE($attributes, p.attributes)
-            """
-        self.write_query(query, face_id=face_id, name=name, attributes=attributes)
+    def update_name_or_attribute(self, face_id=None, name=None, attributes=None, pid=None):
+        if face_id:
+            query = """
+                MERGE (p:Person {face_id: $face_id})
+                ON MATCH SET 
+                    p.name = CASE 
+                                WHEN $name IS NULL OR trim($name) = '' THEN p.name 
+                                ELSE $name 
+                            END,
+                    p.attributes = COALESCE($attributes, p.attributes)
+                """
+            self.write_query(query, face_id=face_id, name=name, attributes=attributes)
+        else:
+            if name:
+                query = """ 
+                    MATCH (p:Person {name: $name})
+                    WHERE id(p) = $pid
+                    SET p.attributes = COALESCE($attributes, p.attributes) 
+                """
+
+                self.write_query(query, name=name, attributes=attributes, pid=pid)
+
 
     def create_or_update_person(self, face_id=None, name=None, state='speak'):
         from core_api import ChatGPT
@@ -101,6 +112,35 @@ class _Neo4j:
             else:
                 return PersonDetails() 
 
+    from neo4j import GraphDatabase
+
+    def describe_relationships_by_face_id(self, face_id):
+        query = """
+        MATCH (p:Person {face_id: $face_id})
+        OPTIONAL MATCH (p)-[r]->(other:Person)
+        OPTIONAL MATCH (other2:Person)-[r2]->(p)
+        RETURN p.name AS selfName, 
+            collect({type: type(r), direction: 'out', target: other.name}) +
+            collect({type: type(r2), direction: 'in', source: other2.name}) AS relations
+        """
+
+        result = self.read_query(query, face_id=face_id)
+        if not result:
+            return "No person found with that face_id."
+
+        self_name = result[0]["selfName"] or "This person"
+        relations = result[0]["relations"]
+        sentences = []
+
+        for rel in relations:
+            if rel["direction"] == "out" and rel["target"]:
+                sentences.append(f"{self_name} is {rel['type'].lower()} of {rel['target']}.")
+            elif rel["direction"] == "in" and rel["source"]:
+                sentences.append(f"{rel['source']} is {rel['type'].lower()} of {self_name}.")
+
+        return " ".join(sentences) if sentences else f"{self_name} has no relationships."
+
+
     def update_db_name_list(self):
         """ 
             Gets the latest names in the db and stores in the database name variable
@@ -113,6 +153,19 @@ class _Neo4j:
         name_result = self.read_query(query)
         self.people_names = [result["name"] for result in name_result]
 
+    def get_people_without_face_id(self, name):
+        query = """ 
+            MATCH (p:Person {name: $name})
+            RETURN exists(p.face_id) as hasFaceID
+        """
+        result = self.read_query(query, name=name)
+
+        if result:
+            return result[0]['hasFaceID']
+        else:
+            print("Error in the people withouth face id")
+            raise ValueError("The result for people_without face id has some error")
+        
     def get_db_people_names(self):
         return self.people_names
 

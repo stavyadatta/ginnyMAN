@@ -5,6 +5,8 @@ class PersonDetails:
         self.latest_usr_msg = {}
         self.latest_llm_msg = {}
 
+        self.all_relevant_messages = []
+
     def __bool__(self):
         return bool(self.person_dict)
 
@@ -32,6 +34,12 @@ class PersonDetails:
             database when adding messages to the linked list
         """
         self.latest_llm_msg = llm_msg
+
+    def set_relevant_messages(self, msg_lst):
+        self.all_relevant_messages = msg_lst
+
+    def get_relevant_messages(self):
+        return self.all_relevant_messages
 
     def set_attribute(self, update_field: str, update_string: str):
         """

@@ -3,7 +3,7 @@ from threading import Thread
 from queue import Queue
 
 from utils import PersonDetails, Neo4j, message_format
-from .prompt import get_attr_prompt
+from .prompt import get_attr_prompt, check_friend_name_prompt
 
 class _AttributeFinder():
     def __init__(self) -> None:
@@ -19,15 +19,109 @@ class _AttributeFinder():
     def adding_text2attr_finder(self, person_details: PersonDetails):
         self.possible_attr_queue.put(person_details)
 
+    def check_friend_name(self, messages):
+        check_friend_prompt = check_friend_name_prompt()
+        check_friend_system_message = message_format("system", check_friend_prompt)
+        total_messages = [check_friend_system_message] + messages
+        from core_api import ChatGPT
+
+        try:
+            response = ChatGPT.send_text_get_json(total_messages, stream=False)
+        except Exception as e:
+            print("Chatgpt failed at friend attributes part")
+            raise e
+
+        friend_name_content = response.choices[0].message.content
+        friend_name_dict = json.load(friend_name_content)
+        return friend_name_dict
+
+    def third_person_update(self, person_details: PersonDetails, output_attribute):
+        from core_api import RelationshipChecker
+
+        all_relevant_messages = person_details.get_relevant_messages()
+        try:
+            friend_name_dict = self.check_friend_name(all_relevant_messages)
+        except Exception as e:
+            raise e
+
+        friend_name = friend_name_dict.get("name")
+        if not bool(friend_name):
+            return
+
+        closest_name = RelationshipChecker.compare_name2db_names(friend_name)
+        friend_current_attributes_query = """ 
+            MATCH  (p:Person {name: $name})
+            RETURN id(p) AS pid, p.attributes AS attributes
+            LIMIT 1
+        """
+        friend_result = Neo4j.read_query(
+            friend_current_attributes_query,
+            name=closest_name
+        )
+
+        if friend_result:
+            friend_attr_list = friend_result[0].get("attributes", []) or []
+            friend_pid = friend_result[0].get("pid")
+            friend_attr_list.append(output_attribute)
+
+            Neo4j.update_name_or_attribute(
+                name=closest_name, 
+                attributes=friend_attr_list, 
+                pid=friend_pid
+            )
+
+    def have_I_heard_about_you(self, name):
+        from core_api import RelationshipChecker
+        closest_name = RelationshipChecker.compare_name2db_names(name)
+
+        # Figure out if the person is without face_id in the db
+        try:
+            has_face_id = Neo4j.get_people_without_face_id(closest_name)
+        except Exception as e:
+            raise e
+
+        # If face_id does not exist that means this person was talked about 
+        # by other person therefore has heard about them
+        if not has_face_id:
+            return True
+        else:
+            return False
+
+    def merging_nodes(self, p1_person_details: PersonDetails, p2_person_name):
+        query = """ 
+            MATCH (p1:Person {face_id: $face_id}), (p2:Person {name: $name})
+            WHERE id(p1) <> id(p2)
+            WITH p1, p2, apoc.coll.toSet(p1.attributes + p2.attributes) AS mergedAttributes
+            SET p1.attributes = mergedAttributes,
+                p1.name = p2.name
+            CALL {
+                WITH p1, p2
+                MATCH (n)-[r]->(p2)
+                MERGE (n)-[newR:TYPE(r)]->(p1)
+                SET newR = r
+                DELETE r
+            }
+            CALL {
+                WITH p1, p2
+                MATCH (p2)-[r]->(n)
+                MERGE (p1)-[newR:TYPE(r)]->(n)
+                SET newR = r
+                DELETE r
+            }
+            DELETE p2
+        """
+        p1_face_id = p1_person_details.get_attribute("face_id")
+        Neo4j.write_query(query, name=p2_person_name, face_id=p1_face_id)
+
     def attr_checker(self):
+        from core_api import RelationshipChecker
         while True:
             person_details = self.possible_attr_queue.get()
             text_message = person_details.get_latest_user_message()
+
             person_attributes = person_details.get_attribute("attributes")
             if person_attributes == None:
                 person_attributes = []
-
-            face_id = person_details.get_attribute("face_id")
 
             from core_api import ChatGPT
 
@@ -46,6 +140,7 @@ class _AttributeFinder():
 
             output_attribute = output_json.get("attribute")
             input_name = output_json.get("name")
+            check_friend = output_json.get("check_friend")
 
             attribute_bool = bool(output_attribute)
             name_bool = bool(input_name)
@@ -56,8 +151,15 @@ class _AttributeFinder():
 
             print("These are the attributes going in ", person_attributes, attribute_bool, name_bool)
 
+            if check_friend:
+                self.third_person_update(person_details, output_attribute)
+
             if attribute_bool or name_bool:
-                Neo4j.update_name_attribute(face_id=face_id, 
-                                            name=input_name, 
-                                            attributes=person_attributes
-                                        )
+                if name_bool and self.have_I_heard_about_you(input_name):
+                    closest_name = RelationshipChecker.compare_name2db_names(input_name)
+                    self.merging_nodes(person_details, closest_name)
+                else:
+                    Neo4j.update_name_or_attribute(face_id=face_id, 
+                                                name=input_name, 
+                                                attributes=person_attributes
+                                            )

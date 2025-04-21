@@ -8,7 +8,11 @@ class _Speaking(ApiBase):
     def __init__(self) -> None:
         super().__init__()
 
-    def _developing_system_prompt(self, person_name, person_attributes):
+    def _developing_system_prompt(self, 
+                                  person_name, 
+                                  person_attributes, 
+                                  person_relationships
+        ):
         system_prompt = f"""
             Your are playing the role of Ginny robot which is a humanoid, as part of this 
             role you are a supposed to have friendly human conversations similar to 
@@ -41,6 +45,8 @@ class _Speaking(ApiBase):
 
             name: {person_name}
             person_attributes: {person_attributes}
+
+            Here are the relationships this person has with people: {person_relationships}
         """
 
         system_dict = message_format("system", system_prompt)
@@ -50,9 +56,17 @@ class _Speaking(ApiBase):
         face_id = person_details.get_attribute("face_id")
         latest_msg = person_details.get_latest_user_message()
         messages = Neo4j.get_person_messages(latest_msg, face_id)
+
+        # Developing system prompt 
         person_attributes = person_details.get_attribute("attributes")
         person_name = person_details.get_attribute("name")
-        system_dict = self._developing_system_prompt(person_name, person_attributes)
+        person_relationships = Neo4j.describe_relationships_by_face_id(face_id)
+        system_dict = self._developing_system_prompt(
+            person_name, 
+            person_attributes, 
+            person_relationships
+        )
+
         total_prompt = system_dict + messages 
         
         # response = Llama.send_to_model(total_prompt, stream=True)
@@ -72,6 +86,8 @@ class _Speaking(ApiBase):
         
         llm_dict = message_format("assistant", llm_response)
         person_details.set_latest_llm_message(llm_dict)
+        person_details.set_relevant_messages(messages + [llm_dict])
+
         Neo4j.add_message_to_person(person_details)
         RelationshipChecker.adding_text2relationship_checker(person_details)
         AttributeFinder.adding_text2attr_finder(person_details)
