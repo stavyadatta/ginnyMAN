@@ -79,7 +79,7 @@ class _Reasoner:
                 response_text = "reset"
             else:
                 response_text = "speak"
-            response_text = self._bad_input_handler(response_text)
+            # response_text = self._bad_input_handler(response_text)
             if response_text not in ("no change", "no change."):
                 print("State:", response_text)
                 person_details.set_attribute("state", response_text)
