@@ -37,7 +37,7 @@ class SpeechProcessor:
         while self.to_execute_movement_thread:
             if self.do_movement.is_set():
                 # If the event is set, perform a movement
-                self.standard_movement.perform_body_speech(movement_num)
+                # self.standard_movement.perform_body_speech(movement_num)
                 movement_num += 1
                 if movement_num > 16:
                     movement_num = 1
