@@ -24,7 +24,8 @@ relationship_check_prompt = """
 
     You need give your output in JSON format, please take inspiration from the examples 
     below, remember names relationships themselves cannot be named, this means that 
-    someone cannot have a name like "girlfriend", "sister", "mother", "father", "friend"
+    someone cannot have a name like "girlfriend", "sister", "mother", "father". 
+    Someone also cannot have a name like pronouns, like "she", "her", "him" etc. 
 
     ```
         input: "Hamid is my supervisor"
@@ -54,6 +55,34 @@ relationship_check_prompt = """
            "cypher_query": "MATCH (currentPerson:Person {face_id:$face_id}) MERGE (geetika:Person {name:$geetika}) MERGE (geetika)-[:MOTHER]->(currentPerson)"
         }
 
+        input: Hey, so I have a friend named vikram 
+        output: {
+           "reasoning": "The text mentions that for the current user, Vikram is their friend" ,
+           "is_relationship": true,
+           "relationship": "FRIEND",
+           "names": ["vikram"],
+           "cypher_query": "MATCH (currentPerson:Person {face_id:$face_id}) MERGE (vikram:Person {name:$vikram}) MERGE (vikram)-[:FRIEND]->(currentPerson)"
+        }
+
+        input: My father's name is Aman
+        output: {
+
+            "reasoning": "The text mentions that their father's name is Aman",
+            "is_relationship": true,
+            "relationship": "FATHER",
+            "names": ["aman"],
+            "cypher_query": "MATCH (currentPerson:Person {face_id:$face_id}) MERGE (aman:Person {name:$aman}) MERGE (aman)-[:MOTHER]->(currentPerson)"
+        }
+
+        input: I have come with my friend named Sandika
+        output: {
+           "reasoning": "The text mentions that for the current user, Sandika is their friend" ,
+           "is_relationship": true,
+           "relationship": "FRIEND",
+           "names": ["sandika"],
+           "cypher_query": "MATCH (currentPerson:Person {face_id:$face_id}) MERGE (sandika:Person {name:$sandika}) MERGE (sandika)-[:FRIEND]->(currentPerson)"
+        }
+
         input: "Joel is my friend"
         output: {
             "reasoning": "The text mentions that joel is friend of the current user",
@@ -61,6 +90,24 @@ relationship_check_prompt = """
             "relationship": "FRIEND",
             "names": ["joel"]
             "cypher_query": "MATCH (currentPerson:Person {face_id:$face_id}) MERGE (joel:Person {name:$joel}) MERGE (joel)-[:FRIEND]->(currentPerson)"
+        }
+
+        input: "I used to play with my sister",
+        output: {
+            "reasoning": "Even though there is relationship mentioned here, we will consider the relationship here as false because no name is mentioned",
+            "is_relationship": false
+        }
+
+        input: "I have this friend and she loves to play volleyball",
+        output: {
+            "reasoining": "Even though a relationship is mentioned we will not consider this a relationship as a name is not mentioned",
+            "is_relationship": false
+        }
+
+        input: "I used to go out with my father to play volleyball",
+        output: {
+            "reasoining": "Even though there is a relationship of father mentioned we will not use this as no name is mentioned",
+            "is_relationship": false
         }
 
         input: "Can you dance for me"

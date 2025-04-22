@@ -26,7 +26,8 @@ def get_attr_prompt(attributes):
     The person might sometime talk about someone else, in that case you need to, this could be 
     if someone is saying their name, or using personal pronouns to refer to someone else 
     like "he", "him", "his", "her", "she" note down the person's attribute and check the 
-    "check_friend" as true in the JSON
+    "check_friend" as true in the JSON, if the person is only referring to a relationship 
+    like "Person A is my friend" you just true the "check_friend"
     Here is a general structure of the output expected
 
     ```
@@ -63,6 +64,24 @@ def get_attr_prompt(attributes):
        "attribute": "loves playing football and read books",
        "name": "",
        "check_friend": true
+    }}
+
+    input: My friend's name is Paula 
+    output: {{
+
+        "reasoning": "The person mentions that their friend's name is Paula"
+        "attribute": "",
+        "name": "",
+        "check_friend": true
+    }}
+
+    input: My father's name is Daniel
+    output: {{
+
+        "reasoning": "The person mentions that their father's name is Daniel"
+        "attribute": "",
+        "name": "",
+        "check_friend": true
     }}
 
     input: He is also fond of console gaming

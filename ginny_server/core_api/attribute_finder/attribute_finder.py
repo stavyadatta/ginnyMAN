@@ -235,14 +235,18 @@ class _AttributeFinder():
                 # If the person has been talked aboout before by someone else 
                 # then use this
                 try:
-                    if name_bool and self.have_I_heard_about_you(input_name):
-                        closest_name = RelationshipChecker.compare_name2db_names(input_name)
-                        self.merging_nodes(person_details, closest_name)
-                    else:
-                        Neo4j.update_name_or_attribute(face_id=face_id, 
-                                                    name=input_name, 
-                                                    attributes=person_attributes
-                                                )
+                    have_I_heard_about_you = self.have_I_heard_about_you(input_name)
+                except ValueError:
+                    have_I_heard_about_you = False
                 except Exception as e:
-                    print(e)
+                    print(f"Some other error in the have_I_heard_about_you {e}")
                     continue
+
+                if name_bool and have_I_heard_about_you:
+                    closest_name = RelationshipChecker.compare_name2db_names(input_name)
+                    self.merging_nodes(person_details, closest_name)
+                elif not check_friend:
+                    Neo4j.update_name_or_attribute(face_id=face_id, 
+                                                name=input_name, 
+                                                attributes=person_attributes
+                                            )

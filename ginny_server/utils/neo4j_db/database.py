@@ -44,7 +44,7 @@ class _Neo4j:
             if name:
                 query = """ 
                     MATCH (p:Person {name: $name})
-                    WHERE id(p) = $pid
+                    WHERE elementId(p) = $pid
                     SET p.attributes = COALESCE($attributes, p.attributes) 
                 """
 
@@ -167,8 +167,7 @@ class _Neo4j:
         if result:
             return result[0]['hasFaceID']
         else:
-            print("Error in the people withouth face id")
-            raise ValueError("The result for people_without face id has some error")
+            raise ValueError(f"The person {name} does not exist in the database")
         
     def get_db_people_names(self):
         return self.people_names

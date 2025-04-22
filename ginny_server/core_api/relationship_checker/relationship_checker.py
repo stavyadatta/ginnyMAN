@@ -57,10 +57,10 @@ class _RelationshipChecker:
         return query_param
 
     def relationship_checker(self):
+        from core_api import ChatGPT
         while True:
             person_details = self.relationship_queue.get()
             text_message = person_details.get_latest_user_message()
-            from core_api import ChatGPT
 
             total_messages = [self.relationship_prompt, text_message]
 
