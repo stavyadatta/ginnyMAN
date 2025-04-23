@@ -79,8 +79,8 @@ class MediaManager(MediaServiceServicer):
             image = audio_img_item.get("image_data")
             cv2.imwrite("/workspace/database/face_db/some.jpg", image)
             face_id = FaceRecognition.get_most_frequent_face_id()
-            if face_id != None:
-                face_id = "face_9999"
+            # if face_id != None:
+            #     face_id = "face_9999"
 
             person_details = Reasoner(transcription, face_id)
             if person_details.get_attribute("state") == "vision":
