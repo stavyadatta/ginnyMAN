@@ -47,6 +47,7 @@ class _Speaking(ApiBase):
             person_attributes: {person_attributes}
 
             Here are the relationships this person has with people: {person_relationships}
+
         """
 
         system_dict = message_format("system", system_prompt)

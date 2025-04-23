@@ -2,7 +2,7 @@ import traceback
 from typing import Optional
 
 from utils import Neo4j, PersonDetails, message_format
-from core_api import Llama, ChatGPT, Grok, ClipClassification
+from core_api import Llama, ChatGPT, Grok, ClipClassification, AttributeFinder, RelationshipChecker
 from .prompt import reasoner_prompt
 
 class _Reasoner:
@@ -47,6 +47,16 @@ class _Reasoner:
                 return "bad input"
         return response_text
 
+    def checking_merge(self, response_text):
+        if "merge" in response_text:
+            name = response_text.split(",")[1]
+            try:
+                have_I_heard_about_you = AttributeFinder.have_I_heard_about_you(name)
+            except ValueError:
+                have_I_heard_about_you = False
+            return have_I_heard_about_you, "speak", name
+        return False, response_text, "_"
+
     def __call__(self, transcription, face_id: Optional[str], img=None) -> PersonDetails:
         """
             Running the reasoner and deciding on what APIs need to be run 
@@ -77,6 +87,13 @@ class _Reasoner:
                 response = ChatGPT.send_text(total_prompt, stream=False)
             response_text = response.choices[0].message.content
             response_text = self._bad_input_handler(response_text)
+
+            check_for_merge, response_text, name = self.checking_merge(response_text)
+            if check_for_merge:
+                closest_name = RelationshipChecker.compare_name2db_names(name)
+                person_details.set_attribute("to_merge", "true")
+                person_details.set_attribute("name_to_check", closest_name)
+
             if response_text not in ("no change", "no change."):
                 print("State:", response_text)
                 person_details.set_attribute("state", response_text)

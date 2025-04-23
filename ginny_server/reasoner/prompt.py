@@ -9,6 +9,7 @@ jeanie, Jenny, Genie, etc.
 5. If the user asks you perform any sort of custom movement, like handshaking, high fiving, or something like "move your body parts", respond with "custom movement".
 7. For any other input or scenario, respond with "no change".
 8. If any user asks you to find objects then respond with "person_auto"
+9. If any user is introducing themselves with their name, like "Hi I am Joe, nice to meet you", or "My name is Daniel". you should output "merge, <name>" where the name is the name the person mentioned
 9. If you think the input is actually not talking to you should output "bad input". This should be cases where you are 3rd person and being talked to 
 Examples under the delimitters
 input: Hey how are you doing 
@@ -19,6 +20,12 @@ response: no change
 
 input: speak to me
 response: speak
+
+input: Hey my name is Vedant, how are you?
+response: merge, Vedant
+
+input: I am Aneesh Ginny, and how are you?
+response: merge, Aneesh
 
 input: Hey Jenny, what are you upto
 response: no change
