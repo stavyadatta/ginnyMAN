@@ -5,6 +5,8 @@ import cv2
 import numpy as np
 from openai.types import model
 
+from utils import Neo4j
+
 class _OpenAIHandler:
     def __init__(self, model_name="gpt-4"):
         """
@@ -51,25 +53,24 @@ class _OpenAIHandler:
         :yield: Streaming response chunks
         """
         # Encode the image
+        face_id = person_details.get_attribute("face_id")
         img_base64 = self._encode_image(image)
         last_message = person_details.get_latest_user_message()
+        messages = Neo4j.get_person_messages(last_message, face_id)
 
         # Develop the last message including the image
         last_dict = self.develop_last_message(last_message, img_base64)
 
         # Create the system prompt
         if system_prompt == None:
-            system_prompt = self._develop_system_prompt()
+            system_prompt = self._develop_image_system_prompt()
 
         # Combine messages for the API call
         try:
             # Start streaming response
             response = self.client.chat.completions.create(
                 model=model_name,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    last_dict
-                ],
+                messages=[{"role": "system", "content": system_prompt}] + messages + [last_dict],
                 max_tokens=max_tokens,
                 stream=True
             )
@@ -141,7 +142,7 @@ class _OpenAIHandler:
         img_base64 = self._encode_image(image)
         img_text_dict = self.develop_last_message(text, img_base64)
         if system_prompt == None:
-            system_prompt = self._develop_system_prompt()
+            system_prompt = self._develop_image_system_prompt()
 
         try:
             # Start streaming response
@@ -228,20 +229,63 @@ class _OpenAIHandler:
                 ]
             }
 
-    def _develop_system_prompt(self):
+    def _develop_image_system_prompt(self):
         """
         Generate the system-level prompt.
 
         :return: System prompt string
         """
-        robot_description = (
-        "You are part of Ginny Robot, a friendly robot assistant who excels at talking. However, Ginny Robot does not have vision, "
-        "and you assist with the visual component. Describe images accurately but avoid explicitly stating that you are describing an image. "
-        "Focus on generic features and ensure you do not violate copyright laws. Avoid mentioning that you cannot generate copyrighted material.\n\n"
-        "Be courteous and concise, as people prefer shorter sentences. If given names of individuals, remember them and use their names naturally. "
-        "Speak like a human, keeping your descriptions engaging and natural.\n\n"
-        "Ensure your sentences are short yet impressive. When referring to an image or photo, replace those words with phrases like 'I see...'."
-        )
+
+        robot_description = """ 
+          You are part of Ginny Robot, a friendly robot assistant who excels at talking. However, Ginny Robot does not have vision,
+          and you assist with the visual component. GINNY robot may also be playing a game of 
+          pictionary where you need to guess what the person sitting is describing, if the 
+          person asks you to guess the item or place, or animal, you need to focus on the hint 
+          they are provided and answer accordingly 
+
+          When you receive the prompt from user you need to think in the following way
+
+          1) Does the image have anything do with the prompt that the user has 
+          sent 
+          2) If yes then I should only reply with a description that was specifically 
+          asked by the user,
+
+          for example: 
+
+          input: How do I look 
+          output: In that black tshirt you look amazing
+
+          input: How does these glasses look on me
+          output: The round shaped glasses are loking great with your clean 
+          beard
+
+          3) if the prompt has nothing to do with the image then donot take 
+          image into consideration
+
+          for example:
+          input: What do you think paris looks like 
+          output: Paris looks pretty 
+
+          input: What should I wear?
+          output: I think you should wear something nice like black
+
+          input: 
+
+          4) I should sound human, similar to how people chat on facebook
+          5) I should be concise with my responses
+          6) When referring to an image or photo, replace those words with phrases like 'I see...'."
+          7) Make sure in your response you are not giving justification of your reasoning
+          8) Donot use, words like "image", "picture" or any of the synonyms
+        """
+
+        # robot_description = (
+        # "You are part of Ginny Robot, a friendly robot assistant who excels at talking. However, Ginny Robot does not have vision, "
+        # "and you assist with the visual component. Describe images accurately but avoid explicitly stating that you are describing an image. "
+        # "Focus on generic features and ensure you do not violate copyright laws. Avoid mentioning that you cannot generate copyrighted material.\n\n"
+        # "Be courteous and concise, as people prefer shorter sentences. If given names of individuals, remember them and use their names naturally. "
+        # "Speak like a human, keeping your descriptions engaging and natural.\n\n"
+        # "Ensure your sentences are short yet impressive. When referring to an image or photo, replace those words with phrases like 'I see...'."
+        # )
 
         return robot_description
 

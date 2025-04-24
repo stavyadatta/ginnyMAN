@@ -94,4 +94,4 @@ class _Speaking(ApiBase):
 
         Neo4j.add_message_to_person(person_details)
         RelationshipChecker.adding_text2relationship_checker(person_details)
-        AttributeFinder.adding_text2attr_finder(person_details)
+        # AttributeFinder.adding_text2attr_finder(person_details)
