@@ -57,7 +57,7 @@ class _RelationshipChecker:
         return query_param
 
     def relationship_checker(self):
-        from core_api import ChatGPT
+        from core_api import ChatGPT, AttributeFinder
         while True:
             person_details = self.relationship_queue.get()
             text_message = person_details.get_latest_user_message()
@@ -89,3 +89,10 @@ class _RelationshipChecker:
 
             Neo4j.write_query(query, **query_param)
             Neo4j.update_db_name_list()
+
+            # going into the attribute checker 
+            try:
+                AttributeFinder.attr_checker(person_details)
+            except Exception as e:
+                print(f"Coming from relationship check into attr {e}" )
+                continue
