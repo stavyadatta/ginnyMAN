@@ -82,5 +82,5 @@ class _Speaking(ApiBase):
         llm_dict = message_format("assistant", llm_response)
         person_details.set_latest_llm_message(llm_dict)
         Neo4j.add_message_to_person(person_details)
-        RelationshipChecker.adding_text2relationship_checker(person_details)
-        AttributeFinder.adding_text2attr_finder(person_details)
+        # RelationshipChecker.adding_text2relationship_checker(person_details)
+        # AttributeFinder.adding_text2attr_finder(person_details)
