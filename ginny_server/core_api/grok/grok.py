@@ -4,6 +4,8 @@ import base64
 import cv2
 import numpy as np
 
+from utils import Neo4j
+
 class _GrokHandler:
     def __init__(self, model_name="gpt-4"):
         """
@@ -70,7 +72,7 @@ class _GrokHandler:
         img_base64 = self._encode_image(image)
         img_text_dict = self.develop_last_message(text, img_base64)
         if system_prompt == None:
-            system_prompt = self._develop_system_prompt()
+            system_prompt = self._develop_image_system_prompt()
 
         try:
             # Start streaming response
@@ -104,25 +106,24 @@ class _GrokHandler:
         :yield: Streaming response chunks
         """
         # Encode the image
+        face_id = person_details.get_attribute("face_id")
         img_base64 = self._encode_image(image)
         last_message = person_details.get_latest_user_message()
+        messages = Neo4j.get_person_messages(last_message, face_id)
 
         # Develop the last message including the image
         last_dict = self.develop_last_message(last_message, img_base64)
 
         # Create the system prompt
         if system_prompt == None:
-            system_prompt = self._develop_system_prompt()
+            system_prompt = self._develop_image_system_prompt()
 
         # Combine messages for the API call
         try:
             # Start streaming response
             response = self.client.chat.completions.create(
                 model="grok-2-vision-1212",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    last_dict
-                ],
+                messages=[{"role": "system", "content": system_prompt}] + messages + [last_dict],
                 max_tokens=max_tokens,
                 stream=True
             )
@@ -176,7 +177,7 @@ class _GrokHandler:
                 ]
             }
 
-    def _develop_system_prompt(self):
+    def _develop_image_system_prompt(self):
         """
         Generate the system-level prompt.
 
@@ -184,7 +185,10 @@ class _GrokHandler:
         """
         robot_description = """ 
           You are part of Ginny Robot, a friendly robot assistant who excels at talking. However, Ginny Robot does not have vision,
-          and you assist with the visual component. 
+          and you assist with the visual component. GINNY robot may also be playing a game of 
+          pictionary where you need to guess what the person sitting is describing, if the 
+          person asks you to guess the item or place, or animal, you need to focus on the hint 
+          they are provided and answer accordingly 
 
           When you receive the prompt from user you need to think in the following way
 
