@@ -14,7 +14,7 @@ class _RelationshipChecker:
                 target=self.relationship_checker,
                 daemon=True
         )
-        relationship_thread.start()
+        # relationship_thread.start()
 
     def adding_text2relationship_checker(self, person_details: PersonDetails):
         self.relationship_queue.put(person_details)

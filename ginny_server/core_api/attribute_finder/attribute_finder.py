@@ -14,7 +14,7 @@ class _AttributeFinder():
             daemon=True
         )
 
-        attribute_thread.start()
+        # attribute_thread.start()
 
     def adding_text2attr_finder(self, person_details: PersonDetails):
         self.possible_attr_queue.put(person_details)
