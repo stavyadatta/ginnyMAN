@@ -112,9 +112,44 @@ class _Neo4j:
             else:
                 return PersonDetails() 
 
-    from neo4j import GraphDatabase
-
     def describe_relationships_by_face_id(self, face_id):
+        query = """
+        MATCH (p:Person {face_id: $face_id})
+        OPTIONAL MATCH (p)-[r]->(other:Person)
+        OPTIONAL MATCH (other2:Person)-[r2]->(p)
+        RETURN p.name AS selfName, 
+            collect({
+                type: type(r), direction: 'out', 
+                target: other.name, attributes: other.attributes
+            }) +
+            collect({
+                type: type(r2), direction: 'in', 
+                source: other2.name, attributes: other2.attributes
+            }) AS relations
+        """
+
+        result = self.read_query(query, face_id=face_id)
+        if not result:
+            return "No person found with that face_id."
+
+        self_name = result[0]["selfName"] or "This person"
+        relations = result[0]["relations"]
+        sentences = []
+
+        for rel in relations:
+            attr_list = rel.get("attributes")
+            attr_text = ""
+            if attr_list and isinstance(attr_list, list) and len(attr_list) > 0:
+                attr_text = f" Their attributes are: {', '.join(attr_list)}."
+
+            if rel["direction"] == "out" and rel.get("target"):
+                sentences.append(f"{self_name} is {rel['type'].lower()} of {rel['target']}.{attr_text}")
+            elif rel["direction"] == "in" and rel.get("source"):
+                sentences.append(f"{rel['source']} is {rel['type'].lower()} of {self_name}.{attr_text}")
+
+        return " ".join(sentences) if sentences else f"{self_name} has no relationships."
+
+    def bkp_describe_relationships_by_face_id(self, face_id):
         query = """
         MATCH (p:Person {face_id: $face_id})
         OPTIONAL MATCH (p)-[r]->(other:Person)
