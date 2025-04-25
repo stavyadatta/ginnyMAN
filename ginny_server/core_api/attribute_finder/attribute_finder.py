@@ -50,6 +50,9 @@ class _AttributeFinder():
             return
 
         closest_name = RelationshipChecker.compare_name2db_names(friend_name)
+
+        assert closest_name != person_details.get_attribute("name")
+
         friend_current_attributes_query = """ 
             MATCH  (p:Person {name: $name})
             RETURN elementId(p) AS pid, p.attributes AS attributes
@@ -59,6 +62,7 @@ class _AttributeFinder():
             friend_current_attributes_query,
             name=closest_name
         )
+
 
         if friend_result:
             friend_attr_list = friend_result[0].get("attributes", []) or []
