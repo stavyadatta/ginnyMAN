@@ -1,8 +1,9 @@
 import json
+from logging import exception
 from threading import Thread
 from queue import Queue
 
-from utils import PersonDetails, Neo4j, message_format
+from utils import PersonDetails, Neo4j, message_format, person_details
 from .prompt import get_attr_prompt, check_friend_name_prompt
 
 class _AttributeFinder():
@@ -10,7 +11,7 @@ class _AttributeFinder():
         self.possible_attr_queue: Queue[PersonDetails] = Queue()
         
         attribute_thread = Thread(
-            target=self.attr_checker,
+            target=self.attr_checker_parallel,
             daemon=True
         )
 
@@ -49,6 +50,9 @@ class _AttributeFinder():
             return
 
         closest_name = RelationshipChecker.compare_name2db_names(friend_name)
+
+        assert closest_name != person_details.get_attribute("name")
+
         friend_current_attributes_query = """ 
             MATCH  (p:Person {name: $name})
             RETURN elementId(p) AS pid, p.attributes AS attributes
@@ -58,6 +62,7 @@ class _AttributeFinder():
             friend_current_attributes_query,
             name=closest_name
         )
+
 
         if friend_result:
             friend_attr_list = friend_result[0].get("attributes", []) or []
@@ -184,69 +189,75 @@ class _AttributeFinder():
             p2_eid=p2_eid
         )
 
-    def attr_checker(self):
+    def attr_checker(self, person_details: PersonDetails):
         from core_api import RelationshipChecker
         from core_api import ChatGPT
+        text_message = person_details.get_latest_user_message()
+
+        person_attributes = person_details.get_attribute("attributes")
+        if person_attributes == None:
+            person_attributes = []
+
+
+        system_text = get_attr_prompt(person_attributes)
+        system_message = message_format("system", system_text)
+        total_messages = [system_message, text_message]
+
+        try:
+            response = ChatGPT.send_text_get_json(total_messages, stream=False)
+        except Exception as e:
+            print("Chatgpt failed to get attributes")
+            raise e
+
+        output = response.choices[0].message.content
+        output_json = json.loads(output)
+
+        output_attribute = output_json.get("attribute")
+        input_name = output_json.get("name")
+        check_friend = output_json.get("check_friend")
+
+        attribute_bool = bool(output_attribute)
+        name_bool = bool(input_name)
+        face_id = person_details.get_attribute("face_id")
+
+        # Adding the attribute to the existing attributes list
+        person_attributes.append(output_attribute)
+
+        print("These are the attributes going in ", person_attributes, attribute_bool, name_bool)
+
+        # For checking if the attributes are being described for a third person 
+        # who is friend, th expectation is of using pronounds like She or He
+        if check_friend:
+            try:
+                self.third_person_update(person_details, output_attribute)
+            except Exception as e:
+                raise e
+
+        if attribute_bool or name_bool:
+            # If the person has been talked aboout before by someone else 
+            # then use this
+            try:
+                have_I_heard_about_you = self.have_I_heard_about_you(input_name)
+            except ValueError:
+                have_I_heard_about_you = False
+            except Exception as e:
+                print(f"Some other error in the have_I_heard_about_you {e}")
+                raise e
+
+            if name_bool and have_I_heard_about_you:
+                closest_name = RelationshipChecker.compare_name2db_names(input_name)
+                self.merging_nodes(person_details, closest_name)
+            elif not check_friend:
+                Neo4j.update_name_or_attribute(face_id=face_id, 
+                                            name=input_name, 
+                                            attributes=person_attributes
+                                        )
+
+    def attr_checker_parallel(self):
         while True:
             person_details = self.possible_attr_queue.get()
-            text_message = person_details.get_latest_user_message()
-
-            person_attributes = person_details.get_attribute("attributes")
-            if person_attributes == None:
-                person_attributes = []
-
-
-            system_text = get_attr_prompt(person_attributes)
-            system_message = message_format("system", system_text)
-            total_messages = [system_message, text_message]
-
             try:
-                response = ChatGPT.send_text_get_json(total_messages, stream=False)
-            except Exception:
-                print("Chatgpt failed to get attributes")
+                self.attr_checker(person_details)
+            except Exception as e:
+                print(e)
                 continue
-
-            output = response.choices[0].message.content
-            output_json = json.loads(output)
-
-            output_attribute = output_json.get("attribute")
-            input_name = output_json.get("name")
-            check_friend = output_json.get("check_friend")
-
-            attribute_bool = bool(output_attribute)
-            name_bool = bool(input_name)
-            face_id = person_details.get_attribute("face_id")
-
-            # Adding the attribute to the existing attributes list
-            person_attributes.append(output_attribute)
-
-            print("These are the attributes going in ", person_attributes, attribute_bool, name_bool)
-
-            # For checking if the attributes are being described for a third person 
-            # who is friend, th expectation is of using pronounds like She or He
-            if check_friend:
-                try:
-                    self.third_person_update(person_details, output_attribute)
-                except Exception as e:
-                    print(e)
-                    continue
-
-            if attribute_bool or name_bool:
-                # If the person has been talked aboout before by someone else 
-                # then use this
-                try:
-                    have_I_heard_about_you = self.have_I_heard_about_you(input_name)
-                except ValueError:
-                    have_I_heard_about_you = False
-                except Exception as e:
-                    print(f"Some other error in the have_I_heard_about_you {e}")
-                    continue
-
-                if name_bool and have_I_heard_about_you:
-                    closest_name = RelationshipChecker.compare_name2db_names(input_name)
-                    self.merging_nodes(person_details, closest_name)
-                elif not check_friend:
-                    Neo4j.update_name_or_attribute(face_id=face_id, 
-                                                name=input_name, 
-                                                attributes=person_attributes
-                                            )
