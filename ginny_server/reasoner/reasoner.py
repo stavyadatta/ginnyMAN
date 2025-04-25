@@ -55,10 +55,10 @@ class _Reasoner:
             :param face_id: To identify faces for doing an action
             :param img: for the VLM to get more context
         """
-        if face_id is None:
-            return PersonDetails({
-                "state": "bad input" 
-            })
+        # if face_id is None:
+        #     return PersonDetails({
+        #         "state": "bad input" 
+        #     })
         try:
             system_prompt = self._developing_reasoning_prompt()
             person_details = Neo4j.get_person_details(face_id)
