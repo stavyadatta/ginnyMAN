@@ -50,6 +50,9 @@ class _AttributeFinder():
             return
 
         closest_name = RelationshipChecker.compare_name2db_names(friend_name)
+
+        assert closest_name != person_details.get_attribute("name")
+
         friend_current_attributes_query = """ 
             MATCH  (p:Person {name: $name})
             RETURN elementId(p) AS pid, p.attributes AS attributes
@@ -59,6 +62,7 @@ class _AttributeFinder():
             friend_current_attributes_query,
             name=closest_name
         )
+
 
         if friend_result:
             friend_attr_list = friend_result[0].get("attributes", []) or []
@@ -118,17 +122,17 @@ class _AttributeFinder():
         merged_attrs = list(dict.fromkeys(attrs1 + attrs2))
 
         # 3. update p1’s attributes & name
-        Neo4j.write_query(
-            """
-            MATCH (p1:Person {face_id:$face_id})
-            SET p1.attributes = $merged_attrs,
-                p1.name       = $new_name
-            """,
-            face_id=face_id,
-            merged_attrs=merged_attrs,
-            new_name=p2_person_name
-        )
-
+        # Neo4j.write_query(
+        #     """
+        #     MATCH (p1:Person {face_id:$face_id})
+        #     SET p1.attributes = $merged_attrs,
+        #         p1.name       = $new_name
+        #     """,
+        #     face_id=face_id,
+        #     merged_attrs=merged_attrs,
+        #     new_name=p2_person_name
+        # )
+        #
         # 4a. reattach incoming rels from p2 to p1
         incoming = Neo4j.read_query(
             """
@@ -183,6 +187,13 @@ class _AttributeFinder():
             DETACH DELETE p2
             """,
             p2_eid=p2_eid
+        )
+
+        print(f"The face id {face_id} name is {p2_person_name} attributes {merged_attrs}")
+        Neo4j.update_name_or_attribute(
+            face_id=face_id,
+            name=p2_person_name,
+            attributes=merged_attrs
         )
 
     def attr_checker(self, person_details: PersonDetails):
@@ -243,7 +254,7 @@ class _AttributeFinder():
             if name_bool and have_I_heard_about_you:
                 closest_name = RelationshipChecker.compare_name2db_names(input_name)
                 self.merging_nodes(person_details, closest_name)
-            elif not check_friend:
+            if not check_friend and not have_I_heard_about_you:
                 Neo4j.update_name_or_attribute(face_id=face_id, 
                                             name=input_name, 
                                             attributes=person_attributes

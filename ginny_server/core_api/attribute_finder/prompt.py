@@ -21,14 +21,17 @@ def get_attr_prompt(attributes):
     If there is no relevant attribute in the input, you output empty string. 
 
 
-    The output should be in JSON, and if the input contains a name, you will output the name as well.
+    The output should be in JSON
 
-    The person might sometime talk about someone else, in that case you need to, this could be 
-    if someone is saying their name, or using personal pronouns to refer to someone else 
-    like "he", "him", "his", "her", "she" note down the person's attribute and check the 
-    "check_friend" as true in the JSON, if the person is only referring to a relationship 
-    like "Person A is my friend" you just true the "check_friend"
-    Here is a general structure of the output expected
+    If the input contains the name, if the person is speaking about their name explicitly 
+    which can be in form of "my name is <name>", I am <name> then pick up the the name and
+    output it in the name json key, sometimes people may be referring to someone else 
+    when they are speaking like "<name> likes to do ....", "My supervisor <name> loves travelling"
+
+    If the person is referring to another person (via name or pronouns like he, she, her, Jimmyhim)
+    note down the person's attribute and check the "check_friend" as true in JSON. if 
+    the person is only referring to a relationship like "Person A is my friend" you just 
+    true the "check_friend", Here is a general structure of the output expected
 
     ```
         {{
@@ -44,7 +47,7 @@ def get_attr_prompt(attributes):
     ```
     input: "Hello, my name is vikram"
     output: {{
-        "reasoning": "This is not attribute but contains name",
+        "reasoning": "This is not attribute but user's own name",
         "attribute": "",
         "name": "vikram",
         "check_friend": false
@@ -58,18 +61,42 @@ def get_attr_prompt(attributes):
         "check_friend": true
     }}
 
+    input: Joana loves to look at books
+    output: {{
+        "reasoning": "Here we are talking about a third person Joana, this is not the name of the person themselves",
+        "attribute": "loves to look at books",
+        "name": "",
+        "check_friend": true
+    }}
+
+    input: My name is not Jim, my name is James
+    output: {{ 
+        "reasoning": "Here we can see the person is mentionining their name is different from what it was before so only mention the name in the output which is relevant, in this case it is James",
+        "attribute": "",
+        "name": "James",
+        "check_friend": false
+    }}
+
     input: Jimmy also loves to play football and read books 
     output: {{
-       "reasoning":  "The attribute is mentioned however it is referring to someone else named Jimmy" ,
+       "reasoning":  "The attribute is mentioned however it is referring to someone else named Jimmy, its not person's own name" ,
        "attribute": "loves playing football and read books",
        "name": "",
        "check_friend": true
     }}
 
+    input: Hey so I am here with my friend Matt
+    output: {{ 
+        "reasoning": "Here only the person's friend's name is mentioned, no attributes, therefore only check friend tick",
+        "attributes": "",
+        "name": "",
+        "check_friend": true
+    }}
+
     input: My friend's name is Paula 
     output: {{
 
-        "reasoning": "The person mentions that their friend's name is Paula"
+        "reasoning": "The person mentions that their friend's name is Paula, therefore we will only tick the check_friend, no sign of user talking about their own name"
         "attribute": "",
         "name": "",
         "check_friend": true
@@ -78,7 +105,7 @@ def get_attr_prompt(attributes):
     input: My father's name is Daniel
     output: {{
 
-        "reasoning": "The person mentions that their father's name is Daniel"
+        "reasoning": "The person mentions that their father's name is Daniel, now their own name"
         "attribute": "",
         "name": "",
         "check_friend": true
@@ -117,6 +144,15 @@ def get_attr_prompt(attributes):
         "check_friend": false
     }}
 
+    input: She works as a Lecturer,
+    output: {{
+
+        "reasoning": "The attribute is regarding a third perosn and that third person is lecturer, but since this is third person I will check friend as true",
+        "attribute": "This person is lecturer",
+        "name": "",
+        "check_friend": true
+    }}
+
     input: Can you tell me where San Francisco is,
     output: {{
         "reasoning": "This is not an attribute",
@@ -151,7 +187,7 @@ def get_attr_prompt(attributes):
 
     input: Hey, I am James, how are you
     output: {{
-        "reasoning": "This is not attribute but contains name",
+        "reasoning": "This is not attribute but contains name of the person themselves",
         "attribute": "",
         "name": "james",
         "check_friend": false
@@ -211,7 +247,7 @@ def check_friend_name_prompt():
        ```
             {
 
-                "reasoning": "The conversation contains the name Jimmy",
+                "reasoning": "The conversation mentions a third person named Jimmy.",
                 "name": "Jimmy"
             }
        ```

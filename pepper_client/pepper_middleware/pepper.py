@@ -59,6 +59,8 @@ class Pepper():
 
         self.not_send_imgs = Event()
 
+        self.do_not_move_head = Event()
+
     def get_image(self):
         return self.camera_manager.get_image(raw=True)
 
@@ -160,7 +162,8 @@ class Pepper():
                     vertical_ratio, horizontal_ratio = self.get_vertical_and_horizontal_axis(box, img_shape)
 
                     # Uncomment the following line when ready to enable head movement:
-                    # self.head_manager.rotate_head(forward=float(vertical_ratio), left=float(horizontal_ratio))
+                    if not self.do_not_move_head.is_set():
+                        self.head_manager.rotate_head(forward=float(vertical_ratio), left=float(horizontal_ratio))
                 elif self.is_zero_list(box) and person_missing > 30:
                     person_missing = 0
                     self.head_manager.rotate_head_abs()
@@ -226,7 +229,9 @@ class Pepper():
             # Send the request to the gRPC server
             try:
                 server_response_stream = self.stub.ProcessAudioImg(request)
+                self.do_not_move_head.set()
                 self.process_server_response(server_response_stream)
+                self.do_not_move_head.clear()
             except grpc.RpcError as e:
                 print("gRPC in sending audio error: {} - {}".format(e.code(), e.details()))
 
