@@ -159,7 +159,7 @@ class MediaManager(MediaServiceServicer):
                 image = self._decode_image_from_bytes(request.image_data)
                 if image is not None:
                     # Add image to the Face and Clip queues
-                    self.image_queue.append(image)
+                    # self.image_queue.append(image)
                     FaceRecognition.add2face_img_queue(image)
                     ClipClassification.add2clip_img_queue(image)
 

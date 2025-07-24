@@ -76,6 +76,7 @@ class _Speaking(ApiBase):
         # response = Llama.send_to_model(total_prompt, stream=True)
         try:
             response = Grok.send_text(total_prompt, stream=True, grok_model="grok-2-1212")
+            print("The speaker response is this ", response)
         except Exception as e:
             print("grok failed ", e)
             response = ChatGPT.send_text(total_prompt, stream=True, model='gpt-4-turbo') 

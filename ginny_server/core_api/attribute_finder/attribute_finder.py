@@ -77,7 +77,7 @@ class _AttributeFinder():
 
     def have_I_heard_about_you(self, name):
         from core_api import RelationshipChecker
-        closest_name = RelationshipChecker.compare_name2db_names(name)
+        closest_name = RelationshipChecker.compare_name2db_names(name, threshold=70)
 
         # Figure out if the person is without face_id in the db
         try:
