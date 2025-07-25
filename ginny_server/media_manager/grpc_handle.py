@@ -77,7 +77,7 @@ class MediaManager(MediaServiceServicer):
 
             # Get the face information 
             image = audio_img_item.get("image_data")
-            cv2.imwrite("/workspace/database/face_db/some.jpg", image)
+            cv2.imwrite("/workspace/display_imgs/some.jpg", image)
             face_id = FaceRecognition.get_most_frequent_face_id()
 
             person_details = Reasoner(transcription, face_id)
