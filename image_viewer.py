@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 
-IMG_DIR = "./display_imgs/"
+IMG_DIR = "/workspace/display_imgs/"
 SUPPORTED_EXTS = ('.jpg', '.jpeg', '.png', '.bmp', '.tif', '.tiff')
 
 app = FastAPI()

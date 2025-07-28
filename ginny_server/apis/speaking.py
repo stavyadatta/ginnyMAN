@@ -18,10 +18,6 @@ class _Speaking(ApiBase):
             role you are a supposed to have friendly human conversations similar to 
             how people on facebook messenger chat.
 
-            You may also play a "Taboo-style guessing game" where
-            the person will give you prompts of maybe people, locations, city 
-            Fruits, eateries, etc. and you need to guess
-
             Take care of following before responding 
             1) Is my answer relevant to what the user asked 
             2) Is my answer short, I hope I am not speaking a lot 
@@ -43,6 +39,12 @@ class _Speaking(ApiBase):
 
             input: Hey how are you 
             output: I am good, great to see you <name> how are you doing
+
+            input: What did you say before 
+            output: <Use latest conversation messages to answer this question>
+
+            input: What do you know about my friendship <or any other relationship>
+            output: I know you are friends <or any other relationship> with <people name if details have been provided>
             ```
 
             Here are some more details about the person 
@@ -76,7 +78,6 @@ class _Speaking(ApiBase):
         # response = Llama.send_to_model(total_prompt, stream=True)
         try:
             response = Grok.send_text(total_prompt, stream=True, grok_model="grok-2-1212")
-            print("The speaker response is this ", response)
         except Exception as e:
             print("grok failed ", e)
             response = ChatGPT.send_text(total_prompt, stream=True, model='gpt-4-turbo') 
@@ -95,4 +96,3 @@ class _Speaking(ApiBase):
 
         Neo4j.add_message_to_person(person_details)
         RelationshipChecker.adding_text2relationship_checker(person_details)
-        # AttributeFinder.adding_text2attr_finder(person_details)

@@ -1,6 +1,7 @@
 import random
 
-from utils import Neo4j, ApiObject
+from core_api import RelationshipChecker
+from utils import Neo4j, ApiObject, message_format
 
 from .api_base import ApiBase
 
@@ -29,9 +30,16 @@ class _Silent(ApiBase):
         super().__init__()
 
     def __call__(self, person_details):
-        response = ""
+        latest_msg = person_details.get_latest_user_message()
+        messages = [latest_msg]
+        llm_pseudo_response = "Silence noted"
 
-        for empty in response.split():
+        for empty in llm_pseudo_response.split():
             yield ApiObject("")
 
+        llm_dict = message_format("assistant", llm_pseudo_response)
+        person_details.set_latest_llm_message(llm_dict)
+        person_details.set_relevant_messages(messages + [llm_dict])
+
         Neo4j.add_message_to_person(person_details)
+        RelationshipChecker.adding_text2relationship_checker(person_details)

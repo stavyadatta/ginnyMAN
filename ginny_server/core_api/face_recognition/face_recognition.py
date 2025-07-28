@@ -188,6 +188,7 @@ class _FaceRecognition:
     def _get_embedding(self, img: np.ndarray) -> np.ndarray:
         """
         Given an image array, detect the face, and generate a face embedding.
+        if its a valid face embedding
 
         Args:
             img (np.ndarray): The image array.
@@ -201,21 +202,26 @@ class _FaceRecognition:
 
         cam_matrix = self._get_camera_matrix(img.shape)
 
-        face = faces[0]
-        embedding = face.embedding
-        area = self._get_face_area(face)
-        is_side_face = self._is_side_face(face, cam_matrix)
-        
-        # Check if Area is valid
-        if area < 4500:
-            raise ValueError("Area too small for face")
+        reason = ""
+        for face in faces:
+            embedding = face.embedding
+            area = self._get_face_area(face)
+            is_side_face = self._is_side_face(face, cam_matrix)
+            
+            # Check if Area is valid
+            if area < 4500:
+                reason = "Area too small, {}".format(area)
+                continue
 
-        if is_side_face:
-            raise ValueError("This is side face")
+            if is_side_face:
+                reason = "Side face was detected"
+                continue
 
+            embedding = embedding.reshape(1, -1)  # shape: (1, embedding_dim)
+            return embedding
 
-        embedding = embedding.reshape(1, -1)  # shape: (1, embedding_dim)
-        return embedding
+        print("Face not recognised because ", reason)
+        raise ValueError("The face detected were invalid")
 
     def _match_face(self, embedding: np.ndarray) -> Optional[str]:
         """

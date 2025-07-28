@@ -68,8 +68,6 @@ class _Reasoner:
             user_prompt = self._developing_user_prompt(transcription)
             total_prompt = system_prompt + user_prompt
 
-            # response = Llama.send_to_model(total_prompt, stream=False)
-            # response = ChatGPT.send_text(total_prompt, stream=False)
             try:
                 response = Grok.send_text(total_prompt, stream=False)
                 print("The response is ", response)
@@ -77,14 +75,16 @@ class _Reasoner:
                 print("grok failed ", e)
                 response = ChatGPT.send_text(total_prompt, stream=False)
             response_text = response.choices[0].message.content
-            response_text = self._bad_input_handler(response_text)
-            if response_text == "no change":
-                response_text = "speak"
+
             if response_text == "bad input":
-                response_text = "speak"
+                response_text = person_details.get_attribute("state")
+
+            if response_text == "no change":
+                response_text = person_details.get_attribute("state")
+
             if response_text not in ("no change", "no change."):
-                print("State:", response_text)
                 person_details.set_attribute("state", response_text)
+                print("Person State:", person_details.get_attribute("state"))
 
             person_details.set_latest_usr_message(user_prompt[0])
             return person_details

@@ -161,7 +161,7 @@ class MediaManager(MediaServiceServicer):
                     # Add image to the Face and Clip queues
                     # self.image_queue.append(image)
                     FaceRecognition.add2face_img_queue(image)
-                    ClipClassification.add2clip_img_queue(image)
+                    # ClipClassification.add2clip_img_queue(image)
 
         except Exception as e:
             traceback.print_exc()
