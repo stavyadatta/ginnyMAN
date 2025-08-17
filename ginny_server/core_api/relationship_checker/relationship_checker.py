@@ -39,7 +39,7 @@ class _RelationshipChecker:
     def find_similar_name(self, name_list):
         new_names = []
         for name in name_list:
-            closest_name = self.compare_name2db_names(name)
+            closest_name = self.compare_name2db_names(name, threshold=70)
             new_names.append(closest_name)
         return new_names
         

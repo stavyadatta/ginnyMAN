@@ -8,6 +8,7 @@ from .grok import _GrokHandler
 from .relationship_checker import _RelationshipChecker
 from .attribute_finder import _AttributeFinder
 from .clip_classification import _ClipClassification
+from .trackers import OCSort
 
 FaceRecognition = _FaceRecognition()
 WhisperSpeech2Text = _WhisperSpeech2Text()

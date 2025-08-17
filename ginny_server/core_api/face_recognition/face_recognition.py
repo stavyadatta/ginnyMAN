@@ -1,5 +1,6 @@
 import cv2
 import glob
+import math
 import torch
 import logging
 import argparse
@@ -48,6 +49,8 @@ class _FaceRecognition:
 
         # Load database embeddings
         self.known_ids, self.known_embeddings = self._load_database()
+        self.model_points = self._get_3d_model_points()
+        self.dist_coeffs = np.zeros((4, 1), dtype=np.float32)
 
         self.face_img_queue = Queue(maxsize=15)
         self.face_id_queue = deque(maxlen=15)
@@ -74,8 +77,85 @@ class _FaceRecognition:
         providers = [('CUDAExecutionProvider', {"device_id": 0}), 'CPUExecutionProvider'] \
             if torch.cuda.is_available() else ['CPUExecutionProvider']
         app = FaceAnalysis(name=self.model_name, providers=providers)
-        app.prepare(ctx_id=0 if torch.cuda.is_available() else -1)
+        app.prepare(ctx_id=0 if torch.cuda.is_available() else -1, det_thresh=0.7)
         return app
+
+    def _get_3d_model_points(self):
+        """
+        Defines a generic 3D model of the 5 facial keypoints for head pose estimation.
+        Order: Right Eye, Left Eye, Nose Tip, Right Mouth Corner, Left Mouth Corner
+        """
+        model_points = np.array([
+            [-30.0,  30.0, -30.0],  # Right eye
+            [ 30.0,  30.0, -30.0],  # Left eye
+            [  0.0,   0.0,   0.0],  # Nose tip
+            [-25.0, -30.0, -30.0],  # Right mouth corner
+            [ 25.0, -30.0, -30.0]   # Left mouth corner
+        ], dtype=np.float32)
+        return model_points
+
+
+    def _get_camera_matrix(self, img_shape):
+        """
+        Builds camera intrinsic matrix using SoftBank Pepper OV5640 specs:
+        - Resolution: 640x480
+        - Horizontal FOV: 56.3°
+        - Vertical FOV:   43.7°
+        """
+        h, w = img_shape[:2]
+        # Convert FOVs to radians
+        hfov = np.deg2rad(56.3)
+        vfov = np.deg2rad(43.7)
+        # Compute focal lengths in pixels
+        f_x = (w / 2) / np.tan(hfov / 2)
+        f_y = (h / 2) / np.tan(vfov / 2)
+        # Optical center
+        c_x = w / 2
+        c_y = h / 2
+
+        camera_matrix = np.array([
+            [f_x,   0, c_x],
+            [  0, f_y, c_y],
+            [  0,   0,   1]
+        ], dtype=np.float32)
+        return camera_matrix
+
+    def _rotation_matrix_to_euler_angles(self, R):
+        """
+        Converts rotation matrix to Euler angles (pitch, yaw, roll) in degrees using ZYX convention.
+        """
+        sy = math.sqrt(R[0,0]**2 + R[1,0]**2)
+        singular = sy < 1e-6
+        if not singular:
+            x = math.atan2(R[2,1], R[2,2])
+            y = math.atan2(-R[2,0], sy)
+            z = math.atan2(R[1,0], R[0,0])
+        else:
+            x = math.atan2(-R[1,2], R[1,1])
+            y = math.atan2(-R[2,0], sy)
+            z = 0
+        return np.degrees([x, y, z])
+
+    def _is_side_face(self, face, cam_matrix):
+        x1, y1, x2, y2 = face.bbox.astype(int)
+        kps = face.kps.astype(np.float32)
+        image_points = kps
+        success, rvec, tvec = cv2.solvePnP(
+            self.model_points, image_points, cam_matrix, self.dist_coeffs,
+            flags=cv2.SOLVEPNP_EPNP
+        )
+
+        if not success:
+            print("Side facePnp not working")
+
+
+        R, _ = cv2.Rodrigues(rvec)
+        pitch, yaw, roll = self._rotation_matrix_to_euler_angles(R)
+
+        if abs(yaw) > 45.0:
+            return True
+        else:
+            return False
 
     def _load_database(self) -> Tuple[List[str], np.ndarray]:
         """
@@ -101,9 +181,14 @@ class _FaceRecognition:
 
         return known_ids, known_embeddings
 
+    def _get_face_area(self, face):
+        x1, y1, x2, y2 = [int(i) for i in face.bbox]
+        return abs((x2 - x1) * (y2 - y1))
+
     def _get_embedding(self, img: np.ndarray) -> np.ndarray:
         """
         Given an image array, detect the face, and generate a face embedding.
+        if its a valid face embedding
 
         Args:
             img (np.ndarray): The image array.
@@ -115,10 +200,28 @@ class _FaceRecognition:
         if len(faces) == 0:
             raise ValueError("No face detected in the given image.")
 
-        face = faces[0]
-        embedding = face.embedding
-        embedding = embedding.reshape(1, -1)  # shape: (1, embedding_dim)
-        return embedding
+        cam_matrix = self._get_camera_matrix(img.shape)
+
+        reason = ""
+        for face in faces:
+            embedding = face.embedding
+            area = self._get_face_area(face)
+            is_side_face = self._is_side_face(face, cam_matrix)
+            
+            # Check if Area is valid
+            if area < 4500:
+                reason = "Area too small, {}".format(area)
+                continue
+
+            if is_side_face:
+                reason = "Side face was detected"
+                continue
+
+            embedding = embedding.reshape(1, -1)  # shape: (1, embedding_dim)
+            return embedding
+
+        print("Face not recognised because ", reason)
+        raise ValueError("The face detected were invalid")
 
     def _match_face(self, embedding: np.ndarray) -> Optional[str]:
         """

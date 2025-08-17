@@ -39,6 +39,12 @@ class _Speaking(ApiBase):
 
             input: Hey how are you 
             output: I am good, great to see you <name> how are you doing
+
+            input: What did you say before 
+            output: <Use latest conversation messages to answer this question>
+
+            input: What do you know about my friendship <or any other relationship>
+            output: I know you are friends <or any other relationship> with <people name if details have been provided>
             ```
 
             Here are some more details about the person 
@@ -90,4 +96,3 @@ class _Speaking(ApiBase):
 
         Neo4j.add_message_to_person(person_details)
         RelationshipChecker.adding_text2relationship_checker(person_details)
-        # AttributeFinder.adding_text2attr_finder(person_details)

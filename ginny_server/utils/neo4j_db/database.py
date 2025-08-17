@@ -363,6 +363,7 @@ class _Neo4j:
 
         face_id = person_details.get_attribute("face_id")
         state = person_details.get_attribute("state")
+        print("The State inside Neo4j Add message function is ", state)
 
         usr_dict = person_details.get_latest_user_message()
         usr_txt = usr_dict["content"]

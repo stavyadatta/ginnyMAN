@@ -10,15 +10,16 @@ class _ClipClassification():
     """
 
     def __init__(self, checkpoint="openai/clip-vit-large-patch14") -> None:
-        self.detector: Pipeline = pipeline(model=checkpoint, task="zero-shot-image-classification")
+        pass
+        # self.detector: Pipeline = pipeline(model=checkpoint, task="zero-shot-image-classification")
         self.img_queue = Queue(maxsize=15)
-        self.face_class_queue = deque(maxlen=15)
-
-        face_class_thread = Thread(
-            target=self._face_class_on_queue,
-            daemon=True
-        )
-        face_class_thread.start()
+        # self.face_class_queue = deque(maxlen=15)
+        #
+        # face_class_thread = Thread(
+        #     target=self._face_class_on_queue,
+        #     daemon=True
+        # )
+        # face_class_thread.start()
 
     def add2clip_img_queue(self, image):
         self.img_queue.put(image)
