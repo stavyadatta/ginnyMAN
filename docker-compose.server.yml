@@ -1,0 +1,70 @@
+# docker-compose for the ginny_server (server-side only).
+#
+# Usage:
+#   docker compose -f docker-compose.server.yml up         # foreground, streams logs
+#   docker compose -f docker-compose.server.yml up -d      # detached
+#   docker compose -f docker-compose.server.yml logs -f    # follow logs when detached
+#   docker compose -f docker-compose.server.yml down       # stop + remove container
+#
+# Requires nvidia-container-toolkit on the host for GPU access.
+#
+# Environment variables:
+#   Compose auto-loads a file named ".env" sitting next to this compose file.
+#   Put your secrets there:
+#       ANTHROPIC_API_KEY=sk-ant-...
+#       NEO4J_PASSWORD=...
+#       GROK_API_KEY=...
+#       API_KEY=...
+#   The ${VAR:-} syntax below reads from that .env (or the shell env) and
+#   defaults to empty if missing, so the container always starts.
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    image: ginny-server:latest
+    container_name: ginny-server
+
+    # network_mode: host shares the host's network stack with the container,
+    # so every port the app binds (50051, plus anything else) is reachable
+    # without explicit port mapping. Linux-only.
+    network_mode: host
+
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-}
+      - GROK_API_KEY=${GROK_API_KEY:-}
+      - API_KEY=${API_KEY:-}
+      - PYTHONUNBUFFERED=1
+
+    volumes:
+      # Persist logs across container rebuilds.
+      - ./ginny_server/logs:/workspace/ginny_server/logs
+      # Persist models so they aren't re-baked into every image.
+      - ./ginny_server/models:/workspace/ginny_server/models
+      # Face/voice DB and recordings — runtime state, too large to bake in.
+      - ./database:/workspace/database
+      # Generated pepper_auto/run.py (and friends) — overlay the in-image copy
+      # so what the server writes lands on the host and survives rebuilds.
+      - ./pepper_auto:/workspace/pepper_auto
+
+    # GPU access via nvidia-container-toolkit.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+    # JSON-file logging driver with rotation so `docker compose logs` works
+    # without growing unbounded on disk.
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+    restart: unless-stopped

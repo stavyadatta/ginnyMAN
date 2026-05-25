@@ -1,0 +1,109 @@
+# Dockerfile for ginny_server (x86_64, CUDA 11.8, Python 3.10)
+#
+# Mirrors the host this was built on: Ubuntu 22.04, Python 3.10, CUDA 11.8,
+# RTX 4090. Companion file: requirements_server.txt.
+#
+# Build:
+#   docker build -f Dockerfile.server -t ginny-server:latest .
+#
+# Run (needs nvidia-container-toolkit on the host):
+#   docker run --rm --gpus all -p 50051:50051 ginny-server:latest
+
+FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1 \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    TZ=UTC
+
+# ---------- system packages ----------
+# ffmpeg/libsndfile/portaudio: audio + faster-whisper + pyannote
+# libgl1/libglib2.0-0/libsm6/libxext6/libxrender1: opencv + insightface
+# libgomp1: numba / sklearn
+# libsox-dev/libsoxr0: torchaudio sox backend
+# libusb/libasound/libpulse: PyAudio + sounddevice runtime
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3.10 \
+        python3.10-dev \
+        python3.10-venv \
+        python3-pip \
+        build-essential \
+        cmake \
+        pkg-config \
+        git \
+        git-lfs \
+        wget \
+        curl \
+        ca-certificates \
+        ffmpeg \
+        libsndfile1 \
+        libsox-dev \
+        libsoxr0 \
+        portaudio19-dev \
+        libasound2-dev \
+        libpulse0 \
+        libgl1 \
+        libglib2.0-0 \
+        libsm6 \
+        libxext6 \
+        libxrender1 \
+        libgomp1 \
+        libxkbcommon0 \
+        libegl1 \
+        libusb-1.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN ln -sf /usr/bin/python3.10 /usr/local/bin/python \
+ && ln -sf /usr/bin/python3.10 /usr/local/bin/python3
+
+RUN python -m pip install --upgrade pip setuptools wheel
+
+# ---------- torch (cu118) ----------
+# Pinned versions match requirements_ginny_server.txt; cu118 index ensures the
+# wheels target the base image's CUDA 11.8 runtime instead of the default cu121.
+RUN pip install --extra-index-url https://download.pytorch.org/whl/cu118 \
+        torch==2.2.1+cu118 \
+        torchvision==0.17.1+cu118 \
+        torchaudio==2.2.1+cu118
+
+# ---------- python deps ----------
+WORKDIR /workspace
+COPY requirements_server.txt /workspace/requirements_server.txt
+RUN pip install -r /workspace/requirements_server.txt
+
+# ---------- yolox (must come after torch) ----------
+RUN pip install --no-build-isolation git+https://github.com/Megvii-BaseDetection/YOLOX.git
+
+# ---------- onnxruntime-gpu MUST be last ----------
+# Both onnxruntime==1.20.0 and onnxruntime-gpu==1.16.3 are pinned in
+# requirements_server.txt (matches the working host's `pip list`). They share
+# the same `onnxruntime/` package on disk, so whichever installs last wins at
+# import time. Re-installing the GPU build here guarantees CUDAExecutionProvider
+# is available; --no-deps avoids touching the rest of the env.
+RUN pip install --force-reinstall --no-deps onnxruntime-gpu==1.16.3
+
+# ---------- app code ----------
+COPY ginny_server       /workspace/ginny_server
+COPY grpc_communication /workspace/grpc_communication
+COPY pepper_auto        /workspace/pepper_auto
+
+# media_manager/grpc_handle.py does `from grpc_pb2 import ...` (not
+# `from grpc_communication.grpc_pb2 import ...`), so grpc_communication must
+# be on PYTHONPATH directly. /workspace is added so package-style imports
+# (e.g. `import grpc_communication.grpc_pb2_grpc`) keep working too.
+ENV PYTHONPATH=/workspace:/workspace/grpc_communication
+
+# database/ (face_db, voice_db, recordings, ...) is intentionally NOT copied —
+# it's gigabytes of runtime state and is mounted as a volume by compose.
+# Create the mount point so the path exists even if no volume is attached.
+RUN mkdir -p /workspace/database
+
+WORKDIR /workspace/ginny_server
+
+EXPOSE 50051
+
+CMD ["python", "main.py"]
