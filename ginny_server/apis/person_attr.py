@@ -2,7 +2,7 @@ from utils import ApiObject
 from .api_base import ApiBase
 
 from utils import PersonDetails, Neo4j, message_format
-from core_api import PersonDetectionCropper, ChatGPT, Grok
+from core_api import PersonDetectionCropper, ChatGPT, Grok, RelationshipChecker, AttributeFinder
 
 class _PersonAttribute(ApiBase):
     def __init__(self) -> None:
@@ -17,12 +17,12 @@ class _PersonAttribute(ApiBase):
             cropped_person = PersonDetectionCropper.detect_and_crop_person(image)
             assert cropped_person is not None
 
-            # response = ChatGPT.process_image_and_text(cropped_person, person_details)
+            # response = Grok.process_image_and_text(cropped_person, person_details)
             try:
-                response = Grok.process_image_and_text(cropped_person, person_details)
-            except Exception as e:
-                print("grok failed ", e)
                 response = ChatGPT.process_image_and_text(cropped_person, person_details)
+            except Exception as e:
+                print("chatgpt failed ", e)
+                response = Grok.process_image_and_text(cropped_person, person_details)
 
             llm_response = ""
             for chunk in response:
@@ -30,9 +30,10 @@ class _PersonAttribute(ApiBase):
                 yield ApiObject(chunk)
         
             llm_dict = message_format("assistant", llm_response)
-            person_details.add_message(llm_dict)
+            person_details.set_latest_llm_message(llm_dict)
             person_details.set_attribute("state", "speak")
             Neo4j.add_message_to_person(person_details)
+            RelationshipChecker.adding_text2relationship_checker(person_details)
 
         except Exception as e:
             raise Exception(f"Exception in the _PersonAttribute {e}")

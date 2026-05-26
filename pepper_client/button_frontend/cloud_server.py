@@ -1,0 +1,651 @@
+import os
+import time
+import hashlib
+from collections import deque
+from threading import Lock
+from flask import (
+    Flask,
+    request,
+    jsonify,
+    render_template_string,
+    redirect,
+    make_response,
+)
+
+
+# -------------------------------------------------
+# Cloud State
+# -------------------------------------------------
+class CloudState:
+    # Command queue: (command_name, timestamp)
+    _command_queue = deque()
+    _queue_lock = Lock()
+
+    # Telemetry cache
+    _telemetry = {"front_energy": 0.0, "volume": 40, "mic_threshold": 370, "face_min_area": 4500}
+    _telemetry_lock = Lock()
+
+    @classmethod
+    def add_command(cls, kind: str):
+        with cls._queue_lock:
+            # Add command with timestamp
+            cls._command_queue.append({"kind": kind, "ts": time.time()})
+
+    @classmethod
+    def get_pending_commands(cls):
+        """Return all pending commands and clear the queue."""
+        with cls._queue_lock:
+            cmds = list(cls._command_queue)
+            cls._command_queue.clear()
+            return cmds
+
+    @classmethod
+    def update_telemetry(cls, data: dict):
+        with cls._telemetry_lock:
+            if "front_energy" in data:
+                cls._telemetry["front_energy"] = float(data["front_energy"])
+            if "volume" in data:
+                cls._telemetry["volume"] = int(data["volume"])
+            if "mic_threshold" in data:
+                cls._telemetry["mic_threshold"] = int(data["mic_threshold"])
+            if "face_min_area" in data:
+                cls._telemetry["face_min_area"] = int(data["face_min_area"])
+
+    @classmethod
+    def get_telemetry(cls):
+        with cls._telemetry_lock:
+            return cls._telemetry.copy()
+
+
+# -------------------------------------------------
+# Flask app
+# -------------------------------------------------
+def create_app():
+    app = Flask(__name__)
+    API_KEY = os.getenv("FLAGS_API_KEY", "").strip()
+    SITE_PASSWORD = os.getenv("SITE_PASSWORD", "vl4ai")
+    SECRET_KEY = os.getenv("SECRET_KEY", "ginny-ctrl-k8x2m")
+    app.secret_key = SECRET_KEY
+
+    # Signed auth token: cookie value that proves login
+    AUTH_TOKEN = hashlib.sha256(f"{SITE_PASSWORD}:{SECRET_KEY}".encode()).hexdigest()[
+        :32
+    ]
+
+    def require_api_key():
+        if not API_KEY:
+            return True
+        return request.headers.get("X-API-Key") == API_KEY
+
+    def is_authenticated() -> bool:
+        return request.cookies.get("ginny_auth") == AUTH_TOKEN
+
+    @app.before_request
+    def check_auth():
+        # Device-facing API endpoints — no password, protected by API key
+        if request.path.startswith("/api/"):
+            return None
+        # Login page itself
+        if request.path == "/login":
+            return None
+        # Everything else requires the auth cookie
+        if not is_authenticated():
+            return redirect("/login")
+        return None
+
+    # ---------- Login Page ----------
+    LOGIN_HTML = """
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>GINNY — Login</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <style>
+        .glass{background:rgba(17,24,39,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.06)}
+      </style>
+    </head>
+    <body class="min-h-screen flex items-center justify-center text-slate-100"
+          style="background: radial-gradient(1200px 600px at 10% -10%, #1f3a8a, transparent),
+                 radial-gradient(1000px 600px at 110% 10%, #7c3aed, transparent),
+                 linear-gradient(180deg, #0b1020, #0a0f1e 55%, #0b1324);">
+      <div class="w-full max-w-sm px-4">
+        <div class="glass rounded-2xl p-8 shadow-2xl">
+          <h1 class="text-2xl font-extrabold text-center mb-1">
+            <span class="bg-gradient-to-r from-indigo-300 via-sky-200 to-violet-300 bg-clip-text text-transparent">
+              GINNY control
+            </span>
+          </h1>
+          <p class="text-slate-400 text-xs text-center mb-6">Enter password to continue</p>
+          {% if error %}
+          <div class="mb-4 text-sm text-center text-rose-400">{{ error }}</div>
+          {% endif %}
+          <form method="POST" action="/login" class="space-y-4">
+            <input name="password" type="password" autofocus autocomplete="current-password"
+                   placeholder="Password"
+                   class="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3
+                          text-slate-100 placeholder-slate-500 focus:outline-none
+                          focus:ring-2 focus:ring-sky-400/60 focus:border-transparent" />
+            <button type="submit"
+                    class="w-full rounded-xl px-4 py-3 font-semibold shadow-lg
+                           bg-gradient-to-br from-indigo-500 to-sky-500 hover:from-indigo-400 hover:to-sky-400
+                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-300
+                           focus:ring-offset-transparent active:translate-y-px active:scale-[.99]">
+              Enter
+            </button>
+          </form>
+        </div>
+      </div>
+    </body>
+    </html>
+    """
+
+    @app.get("/login")
+    def login_page():
+        if is_authenticated():
+            return redirect("/")
+        return render_template_string(LOGIN_HTML, error=None)
+
+    @app.post("/login")
+    def login_submit():
+        password = (request.form.get("password") or "").strip()
+        if password == SITE_PASSWORD:
+            resp = make_response(redirect("/"))
+            resp.set_cookie(
+                "ginny_auth",
+                AUTH_TOKEN,
+                max_age=365 * 24 * 3600,  # 1 year
+                httponly=True,
+                samesite="Lax",
+                secure=True,
+            )
+            return resp
+        return render_template_string(LOGIN_HTML, error="Wrong password"), 401
+
+    # ---------- Fancy UI ----------
+    INDEX_HTML = """
+    <!doctype html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>GINNY control (Cloud)</title>
+      <script src="https://cdn.tailwindcss.com"></script>
+      <style>
+        .glass{background:rgba(17,24,39,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.06)}
+        .btn-press:active{transform:translateY(1px) scale(.99)}
+        .pulse::after{content:"";position:absolute;inset:0;border-radius:1rem;box-shadow:0 0 0 0 rgba(255,255,255,.25);animation:pulse 1.8s ease-out infinite}
+        @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.25)}100%{box-shadow:0 0 0 24px rgba(255,255,255,0)}}
+        input[type=range]{-webkit-appearance:none;width:100%;height:6px;border-radius:9999px;background:linear-gradient(90deg,#38bdf8,#a78bfa);outline:none}
+        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:9999px;background:white;border:2px solid rgba(0,0,0,.15);box-shadow:0 2px 10px rgba(0,0,0,.25)}
+        input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:9999px;background:white;border:2px solid rgba(0,0,0,.15)}
+        /* Volume state classes */
+        .vol-40 { background: linear-gradient(to bottom right, #f59e0b, #fbbf24); }   /* amber */
+        .vol-90 { background: linear-gradient(to bottom right, #10b981, #34d399); }  /* emerald */
+        .vol-0  { background: linear-gradient(to bottom right, #475569, #334155); }  /* slate */
+      </style>
+    </head>
+    <body class="min-h-screen text-slate-100" style="background: radial-gradient(1200px 600px at 10% -10%, #1f3a8a, transparent), radial-gradient(1000px 600px at 110% 10%, #7c3aed, transparent), linear-gradient(180deg, #0b1020, #0a0f1e 55%, #0b1324);">
+      <div class="max-w-2xl mx-auto px-4 py-10">
+        <header class="mb-8 text-center">
+          <h1 class="text-3xl md:text-4xl font-extrabold tracking-wide">
+            <span class="bg-gradient-to-r from-indigo-300 via-sky-200 to-violet-300 bg-clip-text text-transparent">GINNY control</span>
+          </h1>
+          <p class="text-slate-300/80 mt-2 text-sm">Cloud Interface. Commands are queued for device.</p>
+        </header>
+
+        <main class="glass rounded-2xl p-5 md:p-7 shadow-2xl">
+        <!-- Live Mic (moved up) -->
+            <div class="mb-5">
+            <div class="rounded-2xl ring-1 ring-white/10 bg-gradient-to-br from-slate-800/70 to-slate-900/60 glass p-4 flex items-center justify-between">
+                <div class="text-xs uppercase tracking-wider text-slate-300">Live Mic (Cached)</div>
+                <div id="energy-value"
+                    class="font-extrabold"
+                    style="font-size: clamp(2rem, 7vw, 3.75rem); line-height: 1; letter-spacing: 0.01em;">
+                0.0
+                </div>
+            </div>
+            </div>
+
+          <div class="grid gap-5">
+            <!-- Raise Hand -->
+            <button id="btn-raise-hand"
+              class="relative pulse btn-press rounded-xl px-5 py-6 text-xl font-semibold shadow-lg ring-1 ring-white/10
+                     bg-gradient-to-br from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500
+                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-300 focus:ring-offset-transparent flex items-center justify-center gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14 2a2 2 0 0 1 2 2v6.5l.03.03a2 2 0 0 1 2.97 1.74V18a6 6 0 0 1-6 6h-1A6 6 0 0 1 6 18v-5a2 2 0 0 1 3.97-.27L10 13V4a2 2 0 0 1 4 0z"/>
+              </svg>
+              Raise Hand
+            </button>
+
+            <!-- Ask Question -->
+            <button id="btn-ask-question"
+              class="relative pulse btn-press rounded-xl px-5 py-6 text-xl font-semibold shadow-lg ring-1 ring-white/10
+                     bg-gradient-to-br from-violet-500 to-indigo-600 hover:from-violet-400 hover:to-indigo-500
+                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-300 focus:ring-offset-transparent flex items-center justify-center gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
+              </svg>
+              Ask Question
+            </button>
+
+            <!-- Say Thanks -->
+            <button id="btn-say-thanks"
+              class="relative pulse btn-press rounded-xl px-5 py-6 text-xl font-semibold shadow-lg ring-1 ring-white/10
+                     bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500
+                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-300 focus:ring-offset-transparent flex items-center justify-center gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+              Say Thanks
+            </button>
+
+            <hr class="border-white/10 my-1"/>
+
+            <!-- Birthday -->
+            <button id="btn-birthday"
+              class="relative pulse btn-press rounded-xl px-5 py-5 text-lg font-semibold shadow-lg ring-1 ring-white/10
+                     bg-gradient-to-br from-amber-500 to-pink-500 hover:from-amber-400 hover:to-pink-400
+                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-300 focus:ring-offset-transparent flex items-center justify-center gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2c-.5 0-1 .5-1 1v2H9c-.6 0-1 .4-1 1v1H5c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2h-3V6c0-.6-.4-1-1-1h-2V3c0-.5-.5-1-1-1zm-5 9h10v8H7v-8z"/>
+              </svg>
+              Happy Birthday
+            </button>
+
+            <!-- Stop recording -->
+            <button id="btn-stop"
+              class="btn-press rounded-xl px-5 py-5 text-lg font-semibold shadow-lg ring-1 ring-white/10
+                     bg-gradient-to-br from-rose-500 to-red-600 hover:from-rose-400 hover:to-red-500
+                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-300 focus:ring-offset-transparent flex items-center justify-center gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1z"/>
+              </svg>
+              Stop Recording
+            </button>
+
+            <!-- Dance -->
+            <button id="btn-dance"
+              class="relative pulse btn-press rounded-xl px-5 py-5 text-lg font-semibold shadow-lg ring-1 ring-white/10
+                     bg-gradient-to-br from-fuchsia-500 to-purple-600 hover:from-fuchsia-400 hover:to-purple-500
+                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-fuchsia-300 focus:ring-offset-transparent flex items-center justify-center gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 3a2 2 0 110 4 2 2 0 010-4zm-2 6h4l2 3-2 2 1 6h-2l-1-4-1 4H9l1-6-2-2 2-3z"/>
+              </svg>
+              Dance
+            </button>
+
+            <!-- Volume (cycles 40 -> 90 -> 0) -->
+            <button id="btn-volume"
+              class="btn-press rounded-xl px-5 py-5 text-lg font-semibold shadow-lg ring-1 ring-white/10 vol-40
+                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-300 focus:ring-offset-transparent
+                     flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M5 9v6h4l5 4V5l-5 4H5z"/>
+                </svg>
+                <span>Volume</span>
+              </div>
+              <span id="vol-label" class="text-sm font-bold">40</span>
+            </button>
+          </div>
+
+          <!-- Mic Threshold Slider -->
+          <div class="mt-6 p-4 rounded-xl ring-1 ring-white/10 bg-black/20">
+            <div class="flex items-center justify-between mb-3">
+              <label for="mic-slider" class="text-sm uppercase tracking-wider text-slate-300">Mic Threshold</label>
+              <span id="mic-value" class="text-sm font-semibold text-sky-200">—</span>
+            </div>
+            <input id="mic-slider" type="range" min="12" max="8000" step="20" value="370"/>
+            <p class="mt-2 text-xs text-slate-400">Min 12 • Max 8000 • Step 20</p>
+          </div>
+
+          <!-- Face Min Area Slider -->
+          <div class="mt-4 p-4 rounded-xl ring-1 ring-white/10 bg-black/20">
+            <div class="flex items-center justify-between mb-3">
+              <label for="face-area-slider" class="text-sm uppercase tracking-wider text-slate-300">Face Min Area</label>
+              <span id="face-area-value" class="text-sm font-semibold text-sky-200">—</span>
+            </div>
+            <input id="face-area-slider" type="range" min="400" max="4500" step="500" value="4500"/>
+            <p class="mt-2 text-xs text-slate-400">Min 400 • Max 4500 • Step 500</p>
+          </div>
+
+          <div id="status" class="mt-4 text-sm text-slate-300/90"></div>
+        </main>
+      </div>
+
+      <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 hidden">
+        <div class="glass rounded-xl px-4 py-3 shadow-xl text-sm">
+          <span id="toast-text">Flag set</span>
+        </div>
+      </div>
+
+      <script>
+        const statusEl = document.getElementById('status');
+        const toastEl = document.getElementById('toast');
+        const toastText = document.getElementById('toast-text');
+        const micSlider = document.getElementById('mic-slider');
+        const micValue = document.getElementById('mic-value');
+        const faceAreaSlider = document.getElementById('face-area-slider');
+        const faceAreaValue = document.getElementById('face-area-value');
+        const volBtn = document.getElementById('btn-volume');
+        const volLabel = document.getElementById('vol-label');
+
+        function vibrate(ms=20){ if (navigator.vibrate) navigator.vibrate(ms); }
+        function showToast(msg){
+          toastText.textContent = msg;
+          toastEl.classList.remove('hidden','opacity-0');
+          toastEl.classList.add('opacity-100');
+          setTimeout(()=>toastEl.classList.add('opacity-0'), 1200);
+          setTimeout(()=>toastEl.classList.add('hidden'), 1600);
+        }
+
+        function setVolButtonStyle(val){
+          volBtn.classList.remove('vol-40','vol-90','vol-0');
+          if(val===40){ volBtn.classList.add('vol-40'); }
+          else if(val===90){ volBtn.classList.add('vol-90'); }
+          else { volBtn.classList.add('vol-0'); }
+          volLabel.textContent = String(val);
+        }
+
+        async function fetchVolume(){
+          try{
+            const res = await fetch('/api/volume'); 
+            const data = await res.json();
+            if(res.ok && typeof data.value === 'number'){
+              setVolButtonStyle(data.value);
+            }
+          }catch{}
+        }
+
+        async function cycleVolume(){
+          statusEl.textContent = "Cycling volume...";
+          vibrate();
+          try{
+            const res = await fetch('/volume/cycle', { method: 'POST' });
+            const data = await res.json();
+            if(res.ok){
+              statusEl.textContent = "Volume cycle queued";
+              showToast("Volume cycle queued");
+            }else{
+              statusEl.textContent = data.error || 'Error';
+            }
+          }catch{
+            statusEl.textContent = 'Network error';
+          }
+        }
+
+        async function setFlag(kind){
+          statusEl.textContent = "Sending...";
+          vibrate();
+          try{
+            const res = await fetch('/flag/set', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ kind })
+            });
+            const data = await res.json();
+            if(res.ok){
+              const msg = `Queued: ${data.kind}`;
+              statusEl.textContent = msg;
+              showToast(msg);
+            }else{
+              statusEl.textContent = data.error || 'Error';
+            }
+          }catch{ statusEl.textContent = 'Network error'; }
+        }
+
+        // --- Mic threshold helpers ---
+        function snapToStep(x, min=12, step=20){
+          const k = Math.round((x - min) / step);
+          return min + k * step;
+        }
+
+        async function loadMic(){
+          try{
+            const res = await fetch('/api/threshold');
+            const data = await res.json();
+            if(res.ok && typeof data.value === 'number'){
+              micSlider.value = data.value;
+              micValue.textContent = data.value;
+            } else {
+              micValue.textContent = micSlider.value;
+            }
+          }catch{
+            micValue.textContent = micSlider.value;
+          }
+        }
+
+        async function saveMic(val){
+          try{
+            const res = await fetch('/threshold/set', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ value: val })
+            });
+            const data = await res.json();
+            if(res.ok){
+              micValue.textContent = data.value;
+              showToast(`Mic threshold queued: ${data.value}`);
+            } else {
+              showToast(data.error || 'Error');
+            }
+          }catch{
+            showToast('Network error');
+          }
+        }
+
+        document.getElementById('btn-raise-hand').addEventListener('click', ()=>setFlag('raise_hand'));
+        document.getElementById('btn-ask-question').addEventListener('click', ()=>setFlag('ask_question'));
+        document.getElementById('btn-say-thanks').addEventListener('click', ()=>setFlag('say_thanks'));
+        document.getElementById('btn-birthday').addEventListener('click', ()=>setFlag('birthday'));
+        document.getElementById('btn-stop').addEventListener('click', ()=>setFlag('stop_recording'));
+        document.getElementById('btn-dance').addEventListener('click', ()=>setFlag('dance'));
+        volBtn.addEventListener('click', cycleVolume);
+
+        document.addEventListener('keydown', (e)=>{
+          if(e.key.toLowerCase()==='b') setFlag('birthday');
+          if(e.key.toLowerCase()==='x') setFlag('stop_recording');
+          if(e.key.toLowerCase()==='d') setFlag('dance');
+          if(e.key.toLowerCase()==='r') setFlag('raise_hand');
+          if(e.key.toLowerCase()==='q') setFlag('ask_question');
+          if(e.key.toLowerCase()==='t') setFlag('say_thanks');
+        });
+
+        // Slider events (snap + save)
+        micSlider.addEventListener('input', (e)=>{
+          const snapped = snapToStep(parseInt(e.target.value,10));
+          if(snapped != e.target.value){
+            e.target.value = snapped;
+          }
+          micValue.textContent = e.target.value;
+        });
+        micSlider.addEventListener('change', (e)=>{
+          const snapped = snapToStep(parseInt(e.target.value,10));
+          e.target.value = snapped;
+          saveMic(snapped);
+        });
+
+        // --- Face area helpers ---
+        function snapFaceArea(x, min=400, step=500){
+          const k = Math.round((x - min) / step);
+          return min + k * step;
+        }
+
+        async function loadFaceArea(){
+          try{
+            const res = await fetch('/api/face_min_area');
+            const data = await res.json();
+            if(res.ok && typeof data.value === 'number'){
+              faceAreaSlider.value = data.value;
+              faceAreaValue.textContent = data.value;
+            } else {
+              faceAreaValue.textContent = faceAreaSlider.value;
+            }
+          }catch{
+            faceAreaValue.textContent = faceAreaSlider.value;
+          }
+        }
+
+        async function saveFaceArea(val){
+          try{
+            const res = await fetch('/face_min_area/set', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ value: val })
+            });
+            const data = await res.json();
+            if(res.ok){
+              faceAreaValue.textContent = data.value;
+              showToast(`Face min area queued: ${data.value}`);
+            } else {
+              showToast(data.error || 'Error');
+            }
+          }catch{
+            showToast('Network error');
+          }
+        }
+
+        faceAreaSlider.addEventListener('input', (e)=>{
+          const snapped = snapFaceArea(parseInt(e.target.value,10));
+          if(snapped != e.target.value){
+            e.target.value = snapped;
+          }
+          faceAreaValue.textContent = e.target.value;
+        });
+        faceAreaSlider.addEventListener('change', (e)=>{
+          const snapped = snapFaceArea(parseInt(e.target.value,10));
+          e.target.value = snapped;
+          saveFaceArea(snapped);
+        });
+
+        async function pollTelemetry(){
+          try{
+            const res = await fetch('/front_energy', { cache: 'no-store' });
+            const data = await res.json();
+            if(res.ok){
+                // Energy
+                if (typeof data.value !== 'undefined') {
+                    const v = Number(data.value);
+                    document.getElementById('energy-value').textContent =
+                        Number.isFinite(v) ? v.toFixed(1) : '—';
+                }
+                // Volume sync
+                if (typeof data.volume !== 'undefined') {
+                    setVolButtonStyle(data.volume);
+                }
+                // Mic threshold sync (optional, if we want to keep it in sync with device)
+                if (typeof data.mic_threshold !== 'undefined') {
+                    // Only update if user is not dragging? For now, let's just update text
+                    // micValue.textContent = data.mic_threshold;
+                }
+            }
+          }catch{}
+        }
+
+        // Init
+        fetchVolume();   
+        setInterval(pollTelemetry, 200); // Poll cloud cache every 200ms
+        pollTelemetry();
+        loadMic();
+        loadFaceArea();
+      </script>
+    </body>
+    </html>
+    """
+
+    @app.get("/")
+    def index():
+        return render_template_string(INDEX_HTML)
+
+    # ---------- UI Endpoints (Queue Commands) ----------
+    @app.post("/flag/set")
+    def flag_set():
+        payload = request.get_json(silent=True) or {}
+        kind = str(payload.get("kind", "")).strip().lower()
+        if kind in ["birthday", "stop_recording", "dance", "raise_hand", "ask_question", "say_thanks"]:
+            CloudState.add_command(kind)
+            return jsonify({"ok": True, "kind": kind})
+        return jsonify({"error": "unknown flag kind"}), 400
+
+    @app.post("/threshold/set")
+    def threshold_set():
+        payload = request.get_json(silent=True) or {}
+        try:
+            val = int(payload.get("value"))
+            CloudState.add_command(f"set_mic_threshold:{val}")
+            return jsonify({"ok": True, "value": val})
+        except Exception:
+            return jsonify({"error": "invalid value"}), 400
+
+    @app.post("/face_min_area/set")
+    def face_min_area_set():
+        payload = request.get_json(silent=True) or {}
+        try:
+            val = int(payload.get("value"))
+            CloudState.add_command(f"set_face_min_area:{val}")
+            return jsonify({"ok": True, "value": val})
+        except Exception:
+            return jsonify({"error": "invalid value"}), 400
+
+    @app.get("/api/face_min_area")
+    def api_face_min_area_get():
+        telemetry = CloudState.get_telemetry()
+        return jsonify({"ok": True, "value": telemetry["face_min_area"]})
+
+    @app.post("/volume/cycle")
+    def volume_cycle():
+        CloudState.add_command("cycle_volume")
+        return jsonify({"ok": True})
+
+    @app.get("/api/volume")
+    def api_volume_get():
+        telemetry = CloudState.get_telemetry()
+        return jsonify({"ok": True, "value": telemetry["volume"]})
+
+    @app.get("/api/threshold")
+    def api_threshold_get():
+        telemetry = CloudState.get_telemetry()
+        return jsonify({"ok": True, "value": telemetry["mic_threshold"]})
+
+    @app.get("/front_energy")
+    def front_energy_public():
+        telemetry = CloudState.get_telemetry()
+        return jsonify(
+            {
+                "ok": True,
+                "value": telemetry["front_energy"],
+                "volume": telemetry["volume"],
+                "mic_threshold": telemetry["mic_threshold"],
+                "face_min_area": telemetry["face_min_area"],
+            }
+        )
+
+    # ---------- Device Endpoints (Poll & Push) ----------
+    @app.get("/api/poll_commands")
+    def poll_commands():
+        if not require_api_key():
+            return jsonify({"error": "Unauthorized"}), 401
+        cmds = CloudState.get_pending_commands()
+        return jsonify({"ok": True, "commands": cmds})
+
+    @app.post("/api/telemetry")
+    def push_telemetry():
+        if not require_api_key():
+            return jsonify({"error": "Unauthorized"}), 401
+        payload = request.get_json(silent=True) or {}
+        CloudState.update_telemetry(payload)
+        return jsonify({"ok": True})
+
+    return app
+
+
+def run_cloud_server(host="0.0.0.0", port=8004):
+    app = create_app()
+    app.run(host=host, port=port)
+
+
+if __name__ == "__main__":
+    run_cloud_server()

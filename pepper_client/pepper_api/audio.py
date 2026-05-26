@@ -7,6 +7,10 @@ import time
 import sys
 import soundfile as sf
 
+from button_frontend import Buttons_vals, Mic_UI, Telemetry, Volume
+
+ENERGY_THRESHOLD = 370
+
 class AudioManager2(object):
     def __init__(self, session, recording_duration=2):
         super(AudioManager2, self).__init__()
@@ -23,7 +27,7 @@ class AudioManager2(object):
 
     def init_service(self, session):
         self.audio_service = session.service("ALAudioDevice")
-        self.audio_service.setOutputVolume(30)
+        # self.audio_service.setOutputVolume(50)
         self.audio_service.enableEnergyComputation()
 
     def calculate_rms_energy(self, audio_data):
@@ -38,15 +42,40 @@ class AudioManager2(object):
         Record the audio data only when the frontMicEnergy crosses a threshold,
         and stop when it's below the threshold for 10 consecutive loops.
         """
-        energy_threshold = 370
         max_below_thresh_loops = 15  # Stop recording after 10 loops below threshold
-
+        self.audio_service.setOutputVolume(Volume.peek_volume())
 
         # Get the front mic energy
         current_energy = self.audio_service.getFrontMicEnergy()
+        Telemetry.set_front_mic_energy(current_energy)
         print("The front mic energy is {}".format(current_energy))
 
-        if current_energy > energy_threshold:
+        if Buttons_vals.consume_stop_recording():
+            self.stopped_via_button = True
+            self.process_completion()
+            print("Exiting via the Stop button")
+
+        elif Buttons_vals.peek_dance():
+            self.process_completion()
+            print("Exiting via the Dance button")
+
+        elif Buttons_vals.peek_birthday():
+            self.process_completion()
+            print("Exit via First Source Button")
+
+        elif Buttons_vals.peek_raise_hand():
+            self.process_completion()
+            print("Exiting via the Raise Hand button")
+
+        elif Buttons_vals.peek_ask_question():
+            self.process_completion()
+            print("Exiting via the Ask Question button")
+
+        elif Buttons_vals.peek_say_thanks():
+            self.process_completion()
+            print("Exiting via the Say Thanks button")
+
+        elif current_energy > Mic_UI.peek_mic_threshold():
             # Reset the below-threshold counter when the energy crosses the threshold
             self.below_threshold_count = 0
             self.first_high_thresh = True
@@ -63,17 +92,22 @@ class AudioManager2(object):
 
                 # Stop recording after 10 consecutive loops below the threshold
                 if self.below_threshold_count >= max_below_thresh_loops:
-                    self.isProcessingDone = True
-                    self.first_high_thresh = False
+                    self.process_completion()
                     print("Energy below threshold for {} loops".format(max_below_thresh_loops))
-                    self.below_threshold_count = 0
 
+
+
+    def process_completion(self):
+        self.isProcessingDone = True
+        self.first_high_thresh = False
+        self.below_threshold_count = 0
 
     def startProcessing(self):
         """
         Subscribe the service and return the accumulated audio data.
         """
         self.isProcessingDone = False
+        self.stopped_via_button = False
         self.audio_data_buffer = io.BytesIO()
         self.below_threshold_count = 0
         self.first_high_thresh = False
@@ -88,7 +122,7 @@ class AudioManager2(object):
         # Get accumulated audio data
         self.audio_data_buffer.seek(0)
         audio_data = self.audio_data_buffer.read()
-        return audio_data, self.sample_rate
+        return audio_data, self.sample_rate, self.stopped_via_button
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

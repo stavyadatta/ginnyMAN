@@ -1,16 +1,24 @@
 import grpc
 from collections import deque
 from concurrent import futures
+from threading import Thread
 
 from media_manager import MediaManager, IMAGE_QUEUE_LEN
 from secondary_channel import SecondaryGRPC
 import grpc_communication.grpc_pb2_grpc as pb2_grpc
+
+from image_viewer import image_serve
 
 def serve():
     """
     Start the gRPC server and processing loop.
     """
     image_queue = deque(maxlen=IMAGE_QUEUE_LEN)
+    img_serve_thread = Thread(
+        target=image_serve,
+        daemon=True
+    )
+    img_serve_thread.start()
 
     # Start the gRPC server
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))

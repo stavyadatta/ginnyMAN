@@ -16,12 +16,26 @@ from concurrent import futures
 
 import grpc_communication.pepper_auto_pb2_grpc as pepper_pb2_grpc
 import grpc_communication.pepper_auto_pb2 as pepper_pb2
-from grpc_communication.grpc_pb2 import AudioImgRequest, ImageStreamRequest
+from grpc_communication.grpc_pb2 import AudioImgRequest, ImageStreamRequest, TextChunk
 from grpc_communication.grpc_pb2_grpc import MediaServiceStub, SecondaryChannelStub
 from pepper_api import CameraManager, AudioManager2, HeadManager, EyeLEDManager, \
-    SpeechManager, CustomMovement, StandardMovement
+    SpeechManager, CustomMovement, StandardMovement, BirthdayDance, HandManager
 from utils import SpeechProcessor
+from button_frontend import run_button_server, Buttons_vals, FaceArea_UI, run_bridge
 from pepper_auto import PepperAutoController
+
+class TextChunk:
+    def __init__(self, text, mode="default"):
+        self.text = text
+        self.mode = mode
+
+class ResponseStream:
+    def __init__(self, full_text, mode="default"):
+        self.chunks = [TextChunk(full_text, mode)]
+
+    def __iter__(self):
+        # Makes it iterable, so enumerate() works
+        return iter(self.chunks)
 
 logging.basicConfig(filename="app.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -42,6 +56,7 @@ class Pepper():
         self.camera_manager = CameraManager(self.session, resolution=5, colorspace=11, fps=30)
 
         self.standard_movement = StandardMovement(self.session)
+        self.birthday_dance = BirthdayDance()
         self.speech_manager = SpeechManager(self.session)
         self.audio_manager = AudioManager2(self.session)
 
@@ -53,20 +68,25 @@ class Pepper():
         self.posture_service = self.session.service("ALRobotPosture")
         self.head_manager = HeadManager(self.session)
         self.custom_movement = CustomMovement(self.session, self.posture_service)
+        self.hand_manager = HandManager(self.session)
 
         self.session.registerService("CameraManager", self.camera_manager)
         self.life_service.setAutonomousAbilityEnabled("All", False)
 
         self.not_send_imgs = Event()
 
+        self.do_not_move_head = Event()
+
+        self.default_posture()
+
     def get_image(self):
         return self.camera_manager.get_image(raw=True)
 
     def get_audio(self):
         self.eye_led_manager.set_eyes_blue()
-        audio_data, samplerate = self.audio_manager.startProcessing()
+        audio_data, samplerate, stopped_via_button = self.audio_manager.startProcessing()
         self.eye_led_manager.set_eyes_red()
-        return audio_data, samplerate
+        return audio_data, samplerate, stopped_via_button
 
     def make_img_compatible(self):
         raw_image = self.get_image()
@@ -89,8 +109,9 @@ class Pepper():
         # Return the OpenCV-compatible NumPy array
         return cv2_image
     
-    def center_head(self):
-        pass
+    def default_posture(self):
+        """Resets head and hip to the default resting position."""
+        self.head_manager.rotate_head_abs()
 
     def img_stream(self):
         cv2_image = self.make_img_compatible()
@@ -102,7 +123,8 @@ class Pepper():
             image_format="JPEG",
             image_width=width,
             image_height=height,
-            image_description="Captured pepper image"
+            image_description="Captured pepper image",
+            face_min_area=FaceArea_UI.peek_face_min_area()
         )
 
         # Send the image stream request
@@ -160,10 +182,11 @@ class Pepper():
                     vertical_ratio, horizontal_ratio = self.get_vertical_and_horizontal_axis(box, img_shape)
 
                     # Uncomment the following line when ready to enable head movement:
-                    # self.head_manager.rotate_head(forward=float(vertical_ratio), left=float(horizontal_ratio))
+                    if not self.do_not_move_head.is_set():
+                        self.head_manager.rotate_head(forward=float(vertical_ratio), left=float(horizontal_ratio))
                 elif self.is_zero_list(box) and person_missing > 30:
                     person_missing = 0
-                    self.head_manager.rotate_head_abs()
+                    self.default_posture()
         except KeyboardInterrupt:
             logger.info("Stopping the head management")
             raise KeyboardInterrupt
@@ -191,12 +214,83 @@ class Pepper():
         speech_processor.is_running = False
         speaker_thread.join()
         speech_processor.to_execute_movement_thread = False
-        self.posture_service.goToPosture("StandInit", 0.2)
-        
+        self.default_posture()
+
         speech_processor.body_thread.join()
 
+    def birthday_dance_part(self):
+        self.do_not_move_head.set()
+        self.birthday_dance.perform(self.session)
+        self.do_not_move_head.clear()
+
+    def ask_question_with_audio(self):
+        """Play the pre-recorded question audio while performing body talk animations."""
+        QUESTION_AUDIO_PATH = "/home/nao/reza_question_slow.wav"
+        QUESTION_DURATION = 12  # seconds – adjust to match actual audio length
+
+        audio_player = self.session.service("ALAudioPlayer")
+        posture_service = self.session.service("ALRobotPosture")
+
+        self.do_not_move_head.set()
+
+        # Start the audio (non-blocking so we can do body talk over it)
+        file_id = audio_player.loadFile(QUESTION_AUDIO_PATH)
+        audio_player.play(file_id, _async=True)
+
+        # Cycle through body talk animations while audio plays
+        movement_num = 1
+        end_time = time.time() + QUESTION_DURATION
+        while time.time() < end_time:
+            try:
+                self.standard_movement.perform_body_speech(movement_num)
+            except Exception:
+                pass
+            movement_num += 1
+            if movement_num > 16:
+                movement_num = 1
+            time.sleep(0.3)
+
+        audio_player.stopAll()
+        self.hand_manager.lower_right_hand()
+        self.do_not_move_head.clear()
+
+    def say_thanks_with_audio(self):
+        """Play the pre-recorded thank you audio."""
+        THANKS_AUDIO_PATH = "/home/nao/thank_you.wav"
+        THANKS_DURATION = 5  # seconds – adjust to match actual audio length
+
+        audio_player = self.session.service("ALAudioPlayer")
+
+        self.do_not_move_head.set()
+
+        file_id = audio_player.loadFile(THANKS_AUDIO_PATH)
+        audio_player.play(file_id, _async=True)
+
+        time.sleep(THANKS_DURATION)
+
+        audio_player.stopAll()
+        self.do_not_move_head.clear()
+
     def main(self):
-        audio_data, sample_rate = self.get_audio()
+        audio_data, sample_rate, stopped_via_button = self.get_audio()
+        if Buttons_vals.consume_birthday():
+            self.birthday_dance_part()
+            self.main()
+        elif Buttons_vals.consume_dance():
+            self.standard_movement("")
+            self.main()
+        elif Buttons_vals.consume_raise_hand():
+            self.do_not_move_head.set()
+            self.hand_manager.raise_right_hand()
+            self.do_not_move_head.clear()
+            self.main()
+        elif Buttons_vals.consume_ask_question():
+            self.ask_question_with_audio()
+            self.main()
+        elif Buttons_vals.consume_say_thanks():
+            self.say_thanks_with_audio()
+            self.main()
+
         height, width = 240, 320
         last_frame = np.zeros((height, width, 3), dtype=np.uint8)
         try:
@@ -220,17 +314,19 @@ class Pepper():
                 image_format="JPEG",
                 image_width=width,
                 image_height=height,
-                api_task="Captured Pepper"
+                api_task="Captured Pepper",
+                skip_face_validation=stopped_via_button
             )
 
             # Send the request to the gRPC server
             try:
                 server_response_stream = self.stub.ProcessAudioImg(request)
+                self.do_not_move_head.set()
                 self.process_server_response(server_response_stream)
+                self.do_not_move_head.clear()
             except grpc.RpcError as e:
                 print("gRPC in sending audio error: {} - {}".format(e.code(), e.details()))
 
-            time.sleep(1)  # Adjust delay as needed
         except UnboundLocalError as e:
             print("Unbounded local error occuring")
             traceback.print_exc()
@@ -244,6 +340,7 @@ class Pepper():
         del self.speech_manager
         del self.audio_manager
         del self.head_manager
+        del self.hand_manager
         del self.eye_led_manager
         self.session.close()
         print("Pepper resources have been cleaned up.")
@@ -297,6 +394,16 @@ if __name__ == "__main__":
     pepper_auto_thread = Thread(target=pepper_auto_server, args=(p,))
     pepper_auto_thread.daemon = True
     pepper_auto_thread.start()
+
+    # Starting the front end control thread
+    button_control_thread = Thread(target=run_button_server)
+    button_control_thread.daemon = True
+    button_control_thread.start()
+
+    # Starting the cloud bridge thread (syncs with fly.io)
+    cloud_bridge_thread = Thread(target=run_bridge)
+    cloud_bridge_thread.daemon = True
+    cloud_bridge_thread.start()
 
     try:
         # Main loop: send audio and video and process LLM responses
