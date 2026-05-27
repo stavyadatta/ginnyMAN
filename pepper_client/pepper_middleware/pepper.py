@@ -7,6 +7,7 @@ import logging
 import grpc
 import time
 import argparse
+import subprocess
 import numpy as np
 from PIL import Image
 from io import BytesIO
@@ -40,6 +41,25 @@ class ResponseStream:
 logging.basicConfig(filename="app.log", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# boot-config ships with every Pepper; its html/ folder is served at
+# http://198.18.0.1/apps/boot-config/ from the tablet's perspective.
+MONASH_LOGO_REMOTE = "/home/nao/monash_logo_color_white_bg.png"
+MONASH_LOGO_APP_DIR = "/home/nao/.local/share/PackageManager/apps/boot-config/html"
+MONASH_LOGO_TARGET = "monash_logo.png"
+MONASH_LOGO_TABLET_URL = "http://198.18.0.1/apps/boot-config/" + MONASH_LOGO_TARGET
+
+
+def stage_monash_logo_on_robot(robot_ip, ssh_user="nao"):
+    """SSH-copy the Monash logo into a folder served by Pepper's web server."""
+    remote_cmd = "mkdir -p {dir} && cp {src} {dir}/{dst}".format(
+        dir=MONASH_LOGO_APP_DIR,
+        src=MONASH_LOGO_REMOTE,
+        dst=MONASH_LOGO_TARGET,
+    )
+    subprocess.check_call(
+        ["ssh", "{}@{}".format(ssh_user, robot_ip), remote_cmd]
+    )
+
 
 class Pepper():
     def __init__(self, pepper_connection_url, stub, secondary_stub):
@@ -72,6 +92,10 @@ class Pepper():
 
         self.session.registerService("CameraManager", self.camera_manager)
         self.life_service.setAutonomousAbilityEnabled("All", False)
+
+        self.tablet_service = self.session.service("ALTabletService")
+        self._logo_stop = Event()
+        self._logo_thread = None
 
         self.not_send_imgs = Event()
 
@@ -332,9 +356,58 @@ class Pepper():
             traceback.print_exc()
             self.main()
 
+    def show_monash_logo(self):
+        """Display the Monash logo on the chest tablet and keep it asserted.
+
+        Spawns a daemon watchdog that periodically re-issues showImage so
+        the logo survives anything that may dismiss it.
+        """
+        try:
+            self.tablet_service.hideImage()
+        except Exception:
+            pass
+        try:
+            self.tablet_service.cleanCache()
+        except Exception:
+            pass
+
+        # Cache-bust: tablet WebKit keys cached images by URL, so a
+        # stable URL keeps serving the old PNG after we restage the file.
+        # A per-run timestamp forces a fresh fetch each script run.
+        self._logo_url = "{}?t={}".format(MONASH_LOGO_TABLET_URL, int(time.time()))
+
+        try:
+            self.tablet_service.preLoadImage(self._logo_url)
+            self.tablet_service.showImage(self._logo_url)
+        except Exception as e:
+            logger.warning("Could not show Monash logo: {}".format(e))
+            return
+
+        self._logo_thread = Thread(target=self._logo_watchdog)
+        self._logo_thread.daemon = True
+        self._logo_thread.start()
+
+    def _logo_watchdog(self):
+        while not self._logo_stop.is_set():
+            self._logo_stop.wait(30)
+            if self._logo_stop.is_set():
+                break
+            try:
+                self.tablet_service.showImage(self._logo_url)
+            except Exception as e:
+                logger.warning("Logo watchdog failed to re-show: {}".format(e))
+
     def close(self):
         # Shut down services and clean up resources
         print("Shutting down Pepper services...")
+        self._logo_stop.set()
+        try:
+            self.tablet_service.hideImage()
+        except Exception:
+            pass
+        if self._logo_thread is not None:
+            self._logo_thread.join(timeout=2)
+        del self.tablet_service
         del self.camera_manager
         del self.life_service
         del self.speech_manager
@@ -370,15 +443,28 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Please enter Pepper's IP address (and optional port number)")
     parser.add_argument("--ip", type=str, nargs='?', default="192.168.0.52")
     parser.add_argument("--port", type=int, nargs='?', default=9559)
+    parser.add_argument("--ssh-user", type=str, default="nao",
+                        help="SSH user used to stage the Monash logo on the robot")
+    parser.add_argument("--skip-logo-stage", action="store_true",
+                        help="Skip the SSH copy of the Monash logo (already in place)")
     args = parser.parse_args()
 
     pepper_connection_url = "tcp://" + args.ip + ":" + str(args.port)
-    
+
+    if not args.skip_logo_stage:
+        try:
+            print("Staging Monash logo on {} -> {}".format(args.ip, MONASH_LOGO_APP_DIR))
+            stage_monash_logo_on_robot(args.ip, args.ssh_user)
+        except Exception as e:
+            print("Warning: could not stage Monash logo via SSH: {}".format(e))
+            print("Continuing without re-staging; tablet may show a stale image.")
+
     channel = grpc.insecure_channel("172.27.72.27:50051")
     stub = MediaServiceStub(channel)
     secondary_stub = SecondaryChannelStub(channel)
 
     p = Pepper(pepper_connection_url, stub, secondary_stub)
+    p.show_monash_logo()
 
     # Start the image streaming thread (if needed)
     image_thread = Thread(target=p.capture_and_stream_images)
