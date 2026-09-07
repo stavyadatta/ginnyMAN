@@ -91,6 +91,12 @@ COPY ginny_server       /workspace/ginny_server
 COPY grpc_communication /workspace/grpc_communication
 COPY pepper_auto        /workspace/pepper_auto
 
+# main.py does `from image_viewer import image_serve`, but image_viewer.py sits
+# at the repo root rather than inside ginny_server/, so it needs its own COPY.
+# /workspace is on PYTHONPATH below, which is also what lets uvicorn resolve the
+# "image_viewer:app" import string from the ginny_server/ working directory.
+COPY image_viewer.py    /workspace/image_viewer.py
+
 # media_manager/grpc_handle.py does `from grpc_pb2 import ...` (not
 # `from grpc_communication.grpc_pb2 import ...`), so grpc_communication must
 # be on PYTHONPATH directly. /workspace is added so package-style imports
@@ -100,10 +106,17 @@ ENV PYTHONPATH=/workspace:/workspace/grpc_communication
 # database/ (face_db, voice_db, recordings, ...) is intentionally NOT copied —
 # it's gigabytes of runtime state and is mounted as a volume by compose.
 # Create the mount point so the path exists even if no volume is attached.
-RUN mkdir -p /workspace/database
+#
+# display_imgs/ must exist before image_viewer.py is imported: it calls
+# StaticFiles(directory=...) at module scope, which raises RuntimeError on a
+# missing directory. media_manager/grpc_handle.py also writes the current frame
+# there on every ProcessAudioImg call.
+RUN mkdir -p /workspace/database /workspace/display_imgs
 
 WORKDIR /workspace/ginny_server
 
-EXPOSE 50051
+# 50051 = gRPC MediaService/SecondaryChannel. 8003 = image_viewer debug page.
+# Both are informational under compose's network_mode: host.
+EXPOSE 50051 8003
 
 CMD ["python", "main.py"]

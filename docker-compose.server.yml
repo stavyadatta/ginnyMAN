@@ -49,6 +49,21 @@ services:
       # Generated pepper_auto/run.py (and friends) — overlay the in-image copy
       # so what the server writes lands on the host and survives rebuilds.
       - ./pepper_auto:/workspace/pepper_auto
+      # Frames the pipeline is currently looking at, written by
+      # media_manager/grpc_handle.py and served by image_viewer on :8003.
+      - ./display_imgs:/workspace/display_imgs
+
+      # Model caches. core_api/__init__.py instantiates every model at import
+      # time, so whisper large-v3 (~3GB, ~/.cache/whisper) and insightface
+      # buffalo_l (~300MB, ~/.insightface) download on EVERY fresh container
+      # unless these are persisted. Named volumes keep multi-GB weights out of
+      # the repo tree; they survive `down` and are dropped only by `down -v`.
+      - whisper-cache:/root/.cache/whisper
+      - insightface-cache:/root/.insightface
+      - torch-cache:/root/.cache/torch
+      # Unused while _ClipClassification's model load is commented out, but
+      # cheap insurance for anything that reaches for transformers.
+      - hf-cache:/root/.cache/huggingface
 
     # GPU access via nvidia-container-toolkit.
     deploy:
@@ -68,3 +83,12 @@ services:
         max-file: "5"
 
     restart: unless-stopped
+
+# Docker-managed volumes for the model caches above. Inspect with
+# `docker volume ls`; reclaim the space with
+# `docker compose -f docker-compose.server.yml down -v`.
+volumes:
+  whisper-cache:
+  insightface-cache:
+  torch-cache:
+  hf-cache:
