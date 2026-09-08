@@ -89,12 +89,34 @@ class MediaManager(MediaServiceServicer):
 
             print("Executor response:")
             response = Executor(person_details)
-            mode = 'default'
+            # G1 uses one structured response contract for conversation.  A
+            # normal spoken reply is deliberately an idle action, rather than
+            # an implicit body command.  Explicit G1 gesture APIs already
+            # produce their own g1_action JSON and pass through unchanged.
+            default_response_parts = []
             for response_chunk in response:
                 mode = response_chunk.mode
                 response_text = response_chunk.textchunk
                 print(response_text, end='', flush=True)
+                if mode == 'default':
+                    default_response_parts.append(response_text)
+                    continue
+
+                if default_response_parts:
+                    reply = ''.join(default_response_parts)
+                    print("\n[g1_action] action=none")
+                    yield (json.dumps({"reply": reply, "action": "none"},
+                                      ensure_ascii=False),
+                           'g1_action')
+                    default_response_parts = []
                 yield (response_text, mode)
+
+            if default_response_parts:
+                reply = ''.join(default_response_parts)
+                print("\n[g1_action] action=none")
+                yield (json.dumps({"reply": reply, "action": "none"},
+                                  ensure_ascii=False),
+                       'g1_action')
 
         except Exception as e:
             print(f"Error processing audio: {e}")

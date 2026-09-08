@@ -57,4 +57,4 @@ class _G1Gesture(ApiBase):
         # TextChunk has no dedicated action field.  JSON plus mode is the
         # version-compatible contract consumed by the G1 C++ client.
         print(f"[g1_action] state={state} action={gesture['action']}")
-        yield ApiObject(json.dumps(payload), mode="g1_action")
+        yield ApiObject(json.dumps(payload, ensure_ascii=False), mode="g1_action")
