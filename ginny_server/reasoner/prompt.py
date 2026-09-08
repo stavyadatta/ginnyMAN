@@ -6,7 +6,10 @@ jeanie, Jenny, Genie, etc.
 3. If the user asks a question requiring vision to answer (e.g., "what's in my hand," "how do you think I look"), respond with "vision".
 4. If the user provides no input or says "You" or "Thank you", respond with "bad input". Use it sparingly
 6. If you are asked to perform a dance, headbanging respond with "standard movement"
-5. If the user asks you perform any sort of custom movement, like handshaking, high fiving, or something like "move your body parts", respond with "custom movement".
+5. If the user asks you to wave, respond with exactly "g1 wave".
+6. If the user asks to shake hands or handshake, respond with exactly "g1 handshake".
+7. If the user asks for a high five, respond with exactly "g1 high five".
+8. If the user asks you perform another custom movement, respond with "custom movement".
 7. For any other input or scenario, respond with "no change".
 8. If you think the input is actually not talking to you should output "bad input". This should be cases where you are 3rd person and being talked to 
 Examples under the delimitters
@@ -80,28 +83,31 @@ input: How do you think I look
 response: vision
 
 input: can you give me hand shake
-response: custom movement
+response: g1 handshake
 
 input: move forward for me
 response: custom movement
 
 input: shake hands with me 
-response: custom movement
+response: g1 handshake
 
 input: no give me hand shake
-response: custom movement
+response: g1 handshake
 
 input: okay do a dance
 response: standard movement
 
 input: raise your hands
-reponse: custom movement
+response: custom movement
 
 input: can you dance for me
 response: standard movement
 
 input: can you give a high five
-response: custom movement
+response: g1 high five
+
+input: hello Iris, can you wave at me
+response: g1 wave
 
 input: I was thinking about the project and if there are any issues that need 
 to be taken 
