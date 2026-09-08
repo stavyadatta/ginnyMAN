@@ -87,6 +87,8 @@ class MediaManager(MediaServiceServicer):
             if person_details.get_attribute("state") == "vision":
                 person_details.set_image(image)
 
+            resolved_state = person_details.get_attribute("state")
+            print(f"Resolved person state: {resolved_state}")
             print("Executor response:")
             response = Executor(person_details)
             # G1 uses one structured response contract for conversation.  A
@@ -94,6 +96,7 @@ class MediaManager(MediaServiceServicer):
             # an implicit body command.  Explicit G1 gesture APIs already
             # produce their own g1_action JSON and pass through unchanged.
             default_response_parts = []
+            saw_non_default_response = False
             for response_chunk in response:
                 mode = response_chunk.mode
                 response_text = response_chunk.textchunk
@@ -102,6 +105,7 @@ class MediaManager(MediaServiceServicer):
                     default_response_parts.append(response_text)
                     continue
 
+                saw_non_default_response = True
                 if default_response_parts:
                     reply = ''.join(default_response_parts)
                     print("\n[g1_action] action=none")
@@ -113,7 +117,21 @@ class MediaManager(MediaServiceServicer):
 
             if default_response_parts:
                 reply = ''.join(default_response_parts)
+                if not reply.strip():
+                    # A stale/"silent" Neo4j state must not make the G1
+                    # appear unresponsive during a spoken conversation.
+                    reply = "I heard you. Could you say that again?"
+                    print("\n[g1_action] empty normal reply; using fallback")
                 print("\n[g1_action] action=none")
+                yield (json.dumps({"reply": reply, "action": "none"},
+                                  ensure_ascii=False),
+                       'g1_action')
+            elif not saw_non_default_response:
+                # An executor that yields nothing at all gets the same safe
+                # speech-only fallback. Do not invent a physical action.
+                reply = "I heard you. Could you say that again?"
+                print("\n[g1_action] executor yielded no reply; using fallback")
+                print("[g1_action] action=none")
                 yield (json.dumps({"reply": reply, "action": "none"},
                                   ensure_ascii=False),
                        'g1_action')
