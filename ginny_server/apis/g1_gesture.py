@@ -38,6 +38,7 @@ class _G1Gesture(ApiBase):
         if gesture is None:
             # This should be unreachable when the reasoner prompt is obeyed.
             # Never substitute a guessed action when the state is unexpected.
+            print(f"[g1_action] rejected unexpected state={state!r}")
             yield ApiObject(
                 json.dumps({"reply": "", "action": ""}), mode="g1_action_error"
             )
@@ -55,4 +56,5 @@ class _G1Gesture(ApiBase):
 
         # TextChunk has no dedicated action field.  JSON plus mode is the
         # version-compatible contract consumed by the G1 C++ client.
+        print(f"[g1_action] state={state} action={gesture['action']}")
         yield ApiObject(json.dumps(payload), mode="g1_action")
