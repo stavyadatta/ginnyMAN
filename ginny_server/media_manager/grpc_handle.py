@@ -1,4 +1,5 @@
 import os
+import random
 import cv2
 import queue
 import json
@@ -13,6 +14,16 @@ from executor import Executor
 from reasoner import Reasoner
 from grpc_pb2 import AudioImgResponse, TextChunk, FaceBoundingBox, QueueRemoval
 from grpc_pb2_grpc import MediaServiceServicer
+
+# These are deliberately longer than a one-line error. They give G1's
+# Scratch_head custom action time to read naturally while asking for a retry.
+G1_LISTENING_FALLBACKS = (
+    "I am sorry, I did not catch that clearly. Could you please say it once more for me?",
+    "My listening was not very good just then. Would you mind repeating that a little more slowly?",
+    "Excuse me, I missed part of what you said. Could you repeat it one more time, please?",
+    "I am still learning to listen in a noisy room. Please say that again when you are ready.",
+    "Sorry, I did not hear you clearly enough. Could you try that again for me, please?",
+)
 
 IMAGE_QUEUE_LEN = 50
 
@@ -120,19 +131,19 @@ class MediaManager(MediaServiceServicer):
                 if not reply.strip():
                     # A stale/"silent" Neo4j state must not make the G1
                     # appear unresponsive during a spoken conversation.
-                    reply = "I heard you. Could you say that again?"
+                    reply = random.choice(G1_LISTENING_FALLBACKS)
                     print("\n[g1_action] empty normal reply; using fallback")
-                print("\n[g1_action] action=none")
-                yield (json.dumps({"reply": reply, "action": "none"},
+                print("\n[g1_action] action=scratch_head")
+                yield (json.dumps({"reply": reply, "action": "scratch_head"},
                                   ensure_ascii=False),
                        'g1_action')
             elif not saw_non_default_response:
                 # An executor that yields nothing at all gets the same safe
                 # speech-only fallback. Do not invent a physical action.
-                reply = "I heard you. Could you say that again?"
+                reply = random.choice(G1_LISTENING_FALLBACKS)
                 print("\n[g1_action] executor yielded no reply; using fallback")
-                print("[g1_action] action=none")
-                yield (json.dumps({"reply": reply, "action": "none"},
+                print("[g1_action] action=scratch_head")
+                yield (json.dumps({"reply": reply, "action": "scratch_head"},
                                   ensure_ascii=False),
                        'g1_action')
 
