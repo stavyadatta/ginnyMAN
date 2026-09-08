@@ -30,6 +30,9 @@ api_call: dict[str, ApiBase] = {
     "g1 wave": G1Gesture,
     "g1 handshake": G1Gesture,
     "g1 high five": G1Gesture,
+    "g1 confirm wave": G1Gesture,
+    "g1 confirm handshake": G1Gesture,
+    "g1 confirm high five": G1Gesture,
 }
 
 __all__ = ["api_call"]

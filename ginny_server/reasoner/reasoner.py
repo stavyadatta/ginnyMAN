@@ -1,4 +1,6 @@
 import traceback
+import re
+from difflib import SequenceMatcher
 from typing import Optional
 
 from utils import Neo4j, PersonDetails, message_format
@@ -69,6 +71,32 @@ class _Reasoner:
             return "g1 wave"
         return None
 
+    def _uncertain_g1_gesture(self, transcription: str) -> Optional[str]:
+        """Return a confirmation-only gesture candidate, never an action."""
+        text = transcription.lower()
+        request_markers = (
+            "please", "can you", "could you", "would you", "will you",
+            "give me", "do a", "do an",
+        )
+        if not any(marker in text for marker in request_markers):
+            return None
+        words = re.findall(r"[a-z]+", text)
+        # "wait" and "wave" are acoustically close on G1's noisy microphone.
+        # A near match only asks a question; it can never move the robot.
+        if any(SequenceMatcher(None, word, "wave").ratio() >= 0.75
+               for word in words):
+            return "g1 wave"
+        if "shake" in words:
+            return "g1 handshake"
+        if "five" in words and any(word in {"hi", "high"} for word in words):
+            return "g1 high five"
+        return None
+
+    def _confirmed_g1_gesture(self, transcription: str) -> bool:
+        """Accept only a small explicit confirmation vocabulary."""
+        text = " ".join(re.findall(r"[a-z]+", transcription.lower()))
+        return text in {"yes", "yes please", "yeah", "yep", "correct", "do it", "please do"}
+
     def __call__(self, transcription, face_id: Optional[str], img=None) -> PersonDetails:
         """
             Running the reasoner and deciding on what APIs need to be run 
@@ -88,6 +116,21 @@ class _Reasoner:
                 Neo4j.create_or_update_person(face_id=face_id)
                 person_details = Neo4j.get_person_details(face_id)
             user_prompt = self._developing_user_prompt(transcription)
+            pending_state = str(person_details.get_attribute("state"))
+            if pending_state.startswith("g1 confirm "):
+                pending_gesture = pending_state.removeprefix("g1 confirm ")
+                if self._confirmed_g1_gesture(transcription):
+                    person_details.set_attribute("state", "g1 " + pending_gesture)
+                    person_details.set_latest_usr_message(user_prompt[0])
+                    print(
+                        f"[g1_action] confirmation={transcription!r} "
+                        f"route=g1 {pending_gesture}"
+                    )
+                    return person_details
+                # Do not allow an abandoned question to trap future ordinary
+                # conversation in confirmation mode.
+                person_details.set_attribute("state", "speak")
+
             g1_gesture_state = self._requested_g1_gesture(transcription)
             if g1_gesture_state is not None:
                 person_details.set_attribute("state", g1_gesture_state)
@@ -95,6 +138,18 @@ class _Reasoner:
                 print(
                     f"[g1_action] transcription={transcription!r} "
                     f"route={g1_gesture_state}"
+                )
+                return person_details
+
+            uncertain_gesture = self._uncertain_g1_gesture(transcription)
+            if uncertain_gesture is not None:
+                person_details.set_attribute(
+                    "state", "g1 confirm " + uncertain_gesture.removeprefix("g1 ")
+                )
+                person_details.set_latest_usr_message(user_prompt[0])
+                print(
+                    f"[g1_action] transcription={transcription!r} "
+                    f"confirmation_needed={uncertain_gesture}"
                 )
                 return person_details
 

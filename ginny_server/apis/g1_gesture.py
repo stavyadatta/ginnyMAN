@@ -28,12 +28,33 @@ G1_GESTURES = {
     },
 }
 
+G1_CONFIRMATIONS = {
+    "g1 confirm wave": "Did you ask me to wave? Please say yes to confirm.",
+    "g1 confirm handshake": "Did you ask me to shake hands? Please say yes to confirm.",
+    "g1 confirm high five": "Did you ask me for a high five? Please say yes to confirm.",
+}
+
 
 class _G1Gesture(ApiBase):
     """Emit one G1 gesture contract instead of Pepper joint-angle JSON."""
 
     def __call__(self, person_details: PersonDetails):
         state = str(person_details.get_attribute("state"))
+        confirmation = G1_CONFIRMATIONS.get(state)
+        if confirmation is not None:
+            reply_message = message_format("assistant", confirmation)
+            person_details.set_latest_llm_message(reply_message)
+            person_details.set_relevant_messages([reply_message])
+            # Keep the confirmation state in Neo4j until the next utterance.
+            Neo4j.add_message_to_person(person_details)
+            print(f"[g1_action] state={state} action=none (awaiting confirmation)")
+            yield ApiObject(
+                json.dumps({"reply": confirmation, "action": "none"},
+                           ensure_ascii=False),
+                mode="g1_action",
+            )
+            return
+
         gesture = G1_GESTURES.get(state)
         if gesture is None:
             # This should be unreachable when the reasoner prompt is obeyed.
