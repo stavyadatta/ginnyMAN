@@ -47,6 +47,28 @@ class _Reasoner:
                 return "bad input"
         return response_text
 
+    def _requested_g1_gesture(self, transcription: str) -> Optional[str]:
+        """Return one allow-listed G1 gesture for an explicit spoken request.
+
+        Physical intents must not depend on a best-effort LLM classification.
+        Whisper supplies the text; this small, auditable gate accepts only the
+        three gestures the G1 client will later validate independently.
+        """
+        text = transcription.lower()
+        request_markers = (
+            "please", "can you", "could you", "would you", "will you",
+            "give me", "do a", "do an",
+        )
+        if not any(marker in text for marker in request_markers):
+            return None
+        if "high five" in text or "high-five" in text:
+            return "g1 high five"
+        if "handshake" in text or "shake my hand" in text or "shake hands" in text:
+            return "g1 handshake"
+        if "wave" in text:
+            return "g1 wave"
+        return None
+
     def __call__(self, transcription, face_id: Optional[str], img=None) -> PersonDetails:
         """
             Running the reasoner and deciding on what APIs need to be run 
@@ -66,6 +88,16 @@ class _Reasoner:
                 Neo4j.create_or_update_person(face_id=face_id)
                 person_details = Neo4j.get_person_details(face_id)
             user_prompt = self._developing_user_prompt(transcription)
+            g1_gesture_state = self._requested_g1_gesture(transcription)
+            if g1_gesture_state is not None:
+                person_details.set_attribute("state", g1_gesture_state)
+                person_details.set_latest_usr_message(user_prompt[0])
+                print(
+                    f"[g1_action] transcription={transcription!r} "
+                    f"route={g1_gesture_state}"
+                )
+                return person_details
+
             total_prompt = system_prompt + user_prompt
 
             try:
