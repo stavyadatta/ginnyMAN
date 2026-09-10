@@ -128,13 +128,15 @@ class MediaManager(MediaServiceServicer):
 
             if default_response_parts:
                 reply = ''.join(default_response_parts)
+                action = "none"
                 if not reply.strip():
                     # A stale/"silent" Neo4j state must not make the G1
                     # appear unresponsive during a spoken conversation.
                     reply = random.choice(G1_LISTENING_FALLBACKS)
+                    action = "scratch_head"
                     print("\n[g1_action] empty normal reply; using fallback")
-                print("\n[g1_action] action=scratch_head")
-                yield (json.dumps({"reply": reply, "action": "scratch_head"},
+                print(f"\n[g1_action] action={action}")
+                yield (json.dumps({"reply": reply, "action": action},
                                   ensure_ascii=False),
                        'g1_action')
             elif not saw_non_default_response:

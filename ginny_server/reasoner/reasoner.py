@@ -1,11 +1,30 @@
 import traceback
+import random
 import re
 from difflib import SequenceMatcher
 from typing import Optional
 
 from utils import Neo4j, PersonDetails, message_format
 from core_api import Llama, ChatGPT, Grok, ClipClassification
-from .prompt import reasoner_prompt
+from .prompt import action_reasoner_prompt
+
+# The reasoner LLM classifies intent into a *family* of gestures ("g1
+# greeting", "g1 farewell") rather than one specific action, so the family
+# can be resolved to one of its concrete states by weighted probability
+# instead of always picking the same gesture. Equal weights today; skew
+# them (or add more entries) without touching the resolution logic.
+_GREETING_GESTURE_WEIGHTS = {"g1 wave": 0.5, "g1 handshake": 0.5}
+_FAREWELL_GESTURE_WEIGHTS = {"g1 blow kiss left": 0.5, "g1 blow kiss right": 0.5}
+_GESTURE_FAMILY_WEIGHTS = {
+    "g1 greeting": _GREETING_GESTURE_WEIGHTS,
+    "g1 farewell": _FAREWELL_GESTURE_WEIGHTS,
+}
+
+
+def _weighted_choice(options: dict) -> str:
+    """Pick one key from options, weighted by its probability value."""
+    return random.choices(list(options.keys()), weights=list(options.values()), k=1)[0]
+
 
 class _Reasoner:
     def __init__(self):
@@ -28,7 +47,7 @@ class _Reasoner:
         return input_string.lower()
 
     def _developing_reasoning_prompt(self):
-        system_reasoner = reasoner_prompt
+        system_reasoner = action_reasoner_prompt
         system_dict = message_format("system", system_reasoner)
         return [system_dict]
 
@@ -162,6 +181,15 @@ class _Reasoner:
                 print("chatgpt failed ", e)
                 response = Grok.send_text(total_prompt, stream=False)
             response_text = response.choices[0].message.content
+
+            gesture_family = _GESTURE_FAMILY_WEIGHTS.get(response_text)
+            if gesture_family is not None:
+                resolved_gesture = _weighted_choice(gesture_family)
+                print(
+                    f"[g1_action] llm_category={response_text!r} "
+                    f"resolved={resolved_gesture}"
+                )
+                response_text = resolved_gesture
 
             if response_text == "bad input":
                 response_text = person_details.get_attribute("state")

@@ -26,6 +26,14 @@ G1_GESTURES = {
         "action": "high_five",
         "reply": "High five!",
     },
+    "g1 blow kiss left": {
+        "action": "blow_kiss_with_left_hand",
+        "reply": "Goodbye! It was lovely talking with you.",
+    },
+    "g1 blow kiss right": {
+        "action": "blow_kiss_with_right_hand",
+        "reply": "See you next time! Take care.",
+    },
 }
 
 G1_CONFIRMATIONS = {
