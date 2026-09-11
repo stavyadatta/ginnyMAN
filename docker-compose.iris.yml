@@ -1,0 +1,99 @@
+# docker-compose for the iris_server (Unitree G1 "Iris", server-side only).
+#
+# Usage:
+#   docker compose -f docker-compose.iris.yml up         # foreground, streams logs
+#   docker compose -f docker-compose.iris.yml up -d      # detached
+#   docker compose -f docker-compose.iris.yml logs -f    # follow logs when detached
+#   docker compose -f docker-compose.iris.yml down       # stop + remove container
+#
+# Requires nvidia-container-toolkit on the host for GPU access.
+#
+# Environment variables:
+#   Compose auto-loads a file named ".env" sitting next to this compose file.
+#   Put your secrets there:
+#       ANTHROPIC_API_KEY=sk-ant-...
+#       NEO4J_PASSWORD=...
+#       GROK_API_KEY=...
+#       API_KEY=...
+#   The ${VAR:-} syntax below reads from that .env (or the shell env) and
+#   defaults to empty if missing, so the container always starts.
+
+# The service is named "iris" (not "server") so it is a distinct service from
+# docker-compose.server.yml's "server" inside the same compose project. Both
+# files then share the model-cache volumes below instead of re-downloading
+# multi-GB weights, while `up` on one never recreates the other's container.
+# They do both bind :50051 via host networking, so run one robot at a time.
+services:
+  iris:
+    build:
+      context: .
+      dockerfile: Dockerfile.iris
+    image: iris-server:latest
+    container_name: iris-server
+
+    # network_mode: host shares the host's network stack with the container,
+    # so every port the app binds (50051, plus anything else) is reachable
+    # without explicit port mapping. Linux-only.
+    network_mode: host
+
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-}
+      - GROK_API_KEY=${GROK_API_KEY:-}
+      - API_KEY=${API_KEY:-}
+      - PYTHONUNBUFFERED=1
+
+    volumes:
+      # Persist logs across container rebuilds.
+      - ./iris_server/logs:/workspace/iris_server/logs
+      # Persist models so they aren't re-baked into every image.
+      - ./iris_server/models:/workspace/iris_server/models
+      # Face/voice DB and recordings — runtime state, too large to bake in.
+      - ./database:/workspace/database
+      # Generated pepper_auto/run.py (and friends) — overlay the in-image copy
+      # so what the server writes lands on the host and survives rebuilds.
+      - ./pepper_auto:/workspace/pepper_auto
+      # Frames the pipeline is currently looking at, written by
+      # media_manager/grpc_handle.py and served by image_viewer on :8003.
+      - ./display_imgs:/workspace/display_imgs
+
+      # Model caches. core_api/__init__.py instantiates every model at import
+      # time, so whisper large-v3 (~3GB, ~/.cache/whisper) and insightface
+      # buffalo_l (~300MB, ~/.insightface) download on EVERY fresh container
+      # unless these are persisted. Named volumes keep multi-GB weights out of
+      # the repo tree; they survive `down` and are dropped only by `down -v`.
+      - whisper-cache:/root/.cache/whisper
+      - insightface-cache:/root/.insightface
+      - torch-cache:/root/.cache/torch
+      # Unused while _ClipClassification's model load is commented out, but
+      # cheap insurance for anything that reaches for transformers.
+      - hf-cache:/root/.cache/huggingface
+
+    # GPU access via nvidia-container-toolkit.
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+    # JSON-file logging driver with rotation so `docker compose logs` works
+    # without growing unbounded on disk.
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+    restart: unless-stopped
+
+# Docker-managed volumes for the model caches above. Inspect with
+# `docker volume ls`; reclaim the space with
+# `docker compose -f docker-compose.iris.yml down -v`.
+volumes:
+  whisper-cache:
+  insightface-cache:
+  torch-cache:
+  hf-cache:
