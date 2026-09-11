@@ -22,6 +22,18 @@ _MODEL_SINGLETONS = (
 )
 
 
+class _InertModel:
+    """Absorbs any call an API makes on a model these tests do not exercise.
+
+    Several APIs finish by handing their turn to a model singleton — the
+    relationship checker, for one. Those calls have to succeed without doing
+    anything, or the assertion after them never runs.
+    """
+
+    def __getattr__(self, name):
+        return lambda *args, **kwargs: None
+
+
 def add_iris_server_to_path():
     if IRIS_SERVER_PATH not in sys.path:
         sys.path.insert(0, IRIS_SERVER_PATH)
@@ -35,7 +47,7 @@ def stub_core_api_models(face_recognition=None, transcribe=None):
     """
     core_api = types.ModuleType("core_api")
     for name in _MODEL_SINGLETONS:
-        setattr(core_api, name, object())
+        setattr(core_api, name, _InertModel())
     core_api.FaceRecognition = face_recognition
     core_api.WhisperSpeech2Text = transcribe
     sys.modules["core_api"] = core_api

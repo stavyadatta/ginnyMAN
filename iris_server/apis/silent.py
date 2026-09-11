@@ -1,45 +1,42 @@
-import random
+"""Answer an instruction to be quiet with a deliberate, explicit silence.
+
+Yielding empty speech chunks is not enough. The G1 conversation folding reads
+a blank reply as the executor having failed and substitutes a "could you
+repeat that?" line with a head scratch, so being told to be silent used to
+make Iris speak. Saying nothing has to be said explicitly.
+"""
 
 from core_api import RelationshipChecker
-from utils import Neo4j, ApiObject, message_format
+from utils import (
+    ACTION_NONE,
+    ApiObject,
+    G1_ACTION_MODE,
+    Neo4j,
+    PersonDetails,
+    g1_action_payload,
+    message_format,
+)
 
 from .api_base import ApiBase
 
-hmm_variations = [
-    "Hmm", "hmm", "hmmmmm", "hhmmmm", "Hmmmm", "hmmm...", "hmm-hmm", "hmm.", "hmm?", "hmm?!",
-    "hmm~", "HMMM", "hmm..", "hmm...!", "hmm?!!", "hmm!!", "hmm~?", "hmm-hmm-hmm", "hmmmm", "hmmz",
-    "hmmph", "hmmff", "hmmf", "hmm-hm", "hmm, hmm", "hmm-mm", "Hmm~", "hmmm....", "Hmm!", "Hmm?",
-    "Hmm...​", "Hmmmph", "Hmmmff", "Hmmf~", "hmmmmmm", "hmmmm?!", "HMMMM", "hmm. Hmm.", "hmm-hm-hm",
-    "hmmmmmm....", "hmmmmmmmmmmmm", "hmm.. hmm?", "hmm-hm-hmmm", "hmm-hmm...", "hmmmmm~", "hmmmmmph",
-    "hmmmmmff", "hmmmff..", "hmmf?!", "hmm-HMMM", "HMMMPH!", "Hmm, hmm.", "HMM?!", "hmmmmmmmm-hmmm",
-    "hmm~hmm", "Hmm-hmm-hmm.", "Hmm...hmm?", "Hmmmmm?", "Hmmf!", "Hmmm-hmmm", "hmmz-hmm", "Hmm...",
-    "hmmHmm", "Hmm, hmmm.", "Hmmmmmmm~", "HMMMMMMMMMMMM", "hmmz-hmmz", "Hmm~hmm~", "HMMMmmmmm",
-    "Hmmhmm...", "hmmmhm", "hmmmhmm", "hmmmhmhmm", "Hmm...~", "hmmm?!", "hmmmmmf", "Hmm-hm-hm",
-    "HmmMmMm", "Hmm...Hm!", "HmmmffHmmm", "Hmm...hmph", "hmmmmmph...", "Hmmf-hmm~", "hmmHmmHmm",
-    "Hmm..~", "hmmHmmHmm~", "Hmm..Hmm..", "HmmmmmHmm", "Hmm~Hmm~Hmm", "HmmHmmHmm..", "Hmmph",
-    "Hmmhm", "HmmMmmMm", "Hmmhmph", "HmmhmmMm"
-]
-
-# Function to randomly choose one "Hmm"
-def random_hmm():
-    return random.choice(hmm_variations)
+# What the transcript records for a turn the robot deliberately sat out, so
+# later context shows it was asked to stay quiet rather than that it failed.
+SILENCE_TRANSCRIPT_NOTE = "Silence noted"
 
 
 class _Silent(ApiBase):
     def __init__(self) -> None:
         super().__init__()
 
-    def __call__(self, person_details):
-        latest_msg = person_details.get_latest_user_message()
-        messages = [latest_msg]
-        llm_pseudo_response = "Silence noted"
+    def __call__(self, person_details: PersonDetails):
+        yield ApiObject(g1_action_payload("", ACTION_NONE), mode=G1_ACTION_MODE)
+        self._record_silent_turn(person_details)
 
-        for empty in llm_pseudo_response.split():
-            yield ApiObject("")
-
-        llm_dict = message_format("assistant", llm_pseudo_response)
-        person_details.set_latest_llm_message(llm_dict)
-        person_details.set_relevant_messages(messages + [llm_dict])
+    def _record_silent_turn(self, person_details: PersonDetails):
+        latest_usr_message = person_details.get_latest_user_message()
+        silence_note = message_format("assistant", SILENCE_TRANSCRIPT_NOTE)
+        person_details.set_latest_llm_message(silence_note)
+        person_details.set_relevant_messages([latest_usr_message, silence_note])
 
         Neo4j.add_message_to_person(person_details)
         RelationshipChecker.adding_text2relationship_checker(person_details)

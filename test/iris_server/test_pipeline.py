@@ -214,6 +214,27 @@ check.equal("one chunk", len(error_chunks), 1)
 check.equal("mode is error", error_chunks[0].mode, "error")
 check.equal("text explains", error_chunks[0].text.startswith("Some error occured"), True)
 
+check.section("silence is deliberate, not a failure to answer")
+# "be quiet" used to reach the listening fallback, which made Iris say
+# "could you repeat that?" and scratch its head — the opposite of the
+# instruction. A silent turn must stay silent.
+silent_person = PersonDetails({"state": "silent", "face_id": "f1"})
+silent_person.set_latest_usr_message({"role": "user", "content": "be quiet"})
+silent_chunks = list(manager._g1_conversation_chunks(api_call["silent"](silent_person)))
+check.equal("one chunk", len(silent_chunks), 1)
+check.equal("speaks the G1 contract", silent_chunks[0][1], "g1_action")
+silent_payload = json.loads(silent_chunks[0][0])
+check.equal("says nothing", silent_payload["reply"], "")
+check.equal("does nothing", silent_payload["action"], "none")
+check.equal("records the turn for later context",
+            silent_person.get_latest_llm_message()["content"], "Silence noted")
+
+# A genuinely empty reply still asks for a repeat: bad input depends on it.
+bad_input_chunks = list(manager._g1_conversation_chunks(
+    api_call["bad input"](PersonDetails({"state": "bad input"}))))
+check.equal("bad input still scratches its head",
+            json.loads(bad_input_chunks[0][0])["action"], "scratch_head")
+
 check.section("no route can emit another robot's joint angles")
 # "Can you wipe your hands?" used to reach Pepper's movement API and answer
 # with NAO joint names the G1 does not have. Every motion state must now
