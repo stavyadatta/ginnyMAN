@@ -41,6 +41,18 @@ G1_GESTURES = {
         "action": "blow_kiss_with_right_hand",
         "reply": "See you next time! Take care.",
     },
+    "g1 clap": {
+        "action": "clamp",
+        "reply": "Bravo!",
+    },
+    "g1 hug": {
+        "action": "hug",
+        "reply": "Come here, let me give you a hug.",
+    },
+    "g1 hand on heart": {
+        "action": "right_hand_on_heart",
+        "reply": "That means a lot to me, thank you.",
+    },
 }
 
 G1_CONFIRMATIONS = {
