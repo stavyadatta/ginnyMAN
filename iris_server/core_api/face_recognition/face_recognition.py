@@ -59,6 +59,10 @@ class _FaceRecognition:
         self.save_img_queue = deque(maxlen=15)
         self.face_embedding_queue = deque(maxlen=15)
 
+        # Frames arrive many times a second, so an unchanged rejection reason
+        # is logged once per episode rather than once per frame.
+        self._last_rejection_reason = None
+
         face_recognition_thread = Thread(
             target=self._face_recognition_on_queue,
             daemon=True
@@ -226,8 +230,9 @@ class _FaceRecognition:
             embedding = embedding.reshape(1, -1)  # shape: (1, embedding_dim)
             return embedding
 
-        print("Face not recognised because ", reason)
-        raise ValueError("The face detected were invalid")
+        # The reason travels with the exception so the caller decides whether
+        # to log it; this runs once per streamed frame.
+        raise ValueError("The face detected were invalid: {}".format(reason))
 
     def _match_face(self, embedding: np.ndarray) -> Optional[str]:
         """
@@ -322,6 +327,13 @@ class _FaceRecognition:
         """
         return self._save_new_face(embedding, img, save_img=True)
 
+    def _log_rejection_once(self, reason: str):
+        """Report a streamed frame being unusable, but only on a change."""
+        if reason == self._last_rejection_reason:
+            return
+        print("Streamed frames unusable: {}".format(reason))
+        self._last_rejection_reason = reason
+
     def _face_recognition_on_queue(self):
         while True:
             img = self.face_img_queue.get()
@@ -329,11 +341,15 @@ class _FaceRecognition:
             try:
                 recognized_id, emb = self.recognize_face_no_enroll(img)
             except ValueError as e:
-                print("Streamed frame unusable: {}".format(e))
+                self._log_rejection_once(str(e))
                 self.face_id_queue.append(None)
                 self.face_embedding_queue.append(None)
                 self.save_img_queue.append(None)
                 continue
+
+            if self._last_rejection_reason is not None:
+                print("Streamed frames usable again")
+                self._last_rejection_reason = None
 
             self.face_id_queue.append(recognized_id)
             self.face_embedding_queue.append(emb)
