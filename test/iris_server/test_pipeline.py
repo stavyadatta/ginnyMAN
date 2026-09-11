@@ -5,6 +5,7 @@ reason, then fold the executor's output into the G1 reply/action contract —
 plus the gRPC endpoints that feed it.
 """
 
+import importlib.util
 import json
 import queue
 import sys
@@ -213,31 +214,32 @@ check.equal("one chunk", len(error_chunks), 1)
 check.equal("mode is error", error_chunks[0].mode, "error")
 check.equal("text explains", error_chunks[0].text.startswith("Some error occured"), True)
 
-check.section("movement apis share one implementation")
-from apis.movement.custom_prompt import movement_prompt as custom_prompt
-from apis.movement.movement_base import MOVEMENT_MAX_TOKENS, _MovementApi
-from apis.movement.standard_prompt import movement_prompt as standard_prompt
+check.section("no route can emit another robot's joint angles")
+# "Can you wipe your hands?" used to reach Pepper's movement API and answer
+# with NAO joint names the G1 does not have. Every motion state must now
+# decline in speech instead.
+from apis.unsupported_action import _UnsupportedAction
 
-custom, standard = api_call["custom movement"], api_call["standard movement"]
-check.equal("custom is a movement api", isinstance(custom, _MovementApi), True)
-check.equal("standard is a movement api", isinstance(standard, _MovementApi), True)
-check.equal("custom mode", custom.response_mode, "custom_movement")
-check.equal("standard mode", standard.response_mode, "standard_movement")
-check.equal("custom prompt wired", custom.movement_prompt, custom_prompt)
-check.equal("standard prompt wired", standard.movement_prompt, standard_prompt)
-check.equal("prompts differ", custom.movement_prompt == standard.movement_prompt, False)
-check.equal("token budget kept", MOVEMENT_MAX_TOKENS, 2000)
-check.equal("system prompt shape", custom._developing_system_prompt(),
-            [{"role": "system", "content": custom_prompt}])
+for pepper_state in ["custom movement", "standard movement", "g1 unsupported action"]:
+    check.equal(f"{pepper_state!r} declines",
+                isinstance(api_call[pepper_state], _UnsupportedAction), True)
 
-check.section("shared reply recorder")
-recorded = {}
-utils.Neo4j.add_message_to_person = lambda pd: recorded.setdefault("written", pd)
-person = PersonDetails({"state": "custom movement"})
-utils.record_assistant_reply(person, "The movement has been performed")
-check.equal("state returns to speak", person.get_attribute("state"), "speak")
-check.equal("reply remembered", person.get_latest_llm_message(),
-            {"role": "assistant", "content": "The movement has been performed"})
-check.equal("persisted once", recorded.get("written") is person, True)
+declined = list(api_call["g1 unsupported action"](PersonDetails({"state": "custom movement"})))
+check.equal("one chunk", len(declined), 1)
+check.equal("speaks the G1 contract", declined[0].mode, "g1_action")
+declined_payload = json.loads(declined[0].textchunk)
+check.equal("no body action", declined_payload["action"], "none")
+check.equal("offers what it can do",
+            "high five" in declined_payload["reply"], True)
+
+check.equal("Pepper movement package is gone",
+            importlib.util.find_spec("apis.movement"), None)
+check.equal("Pepper auto package is gone",
+            importlib.util.find_spec("apis.pepper_auto"), None)
+for state, api in api_call.items():
+    check.equal(f"{state!r} never emits joint angles",
+                type(api).__name__ in {"_Speaking", "_Silent", "_PersonAttribute",
+                                       "_BadInput", "_NoFace", "_UnsupportedAction",
+                                       "_SecondaryChannel", "_G1Gesture"}, True)
 
 check.report("PIPELINE OK")

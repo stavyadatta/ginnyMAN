@@ -51,9 +51,6 @@ services:
       - ./iris_server/models:/workspace/iris_server/models
       # Face/voice DB and recordings — runtime state, too large to bake in.
       - ./database:/workspace/database
-      # Generated pepper_auto/run.py (and friends) — overlay the in-image copy
-      # so what the server writes lands on the host and survives rebuilds.
-      - ./pepper_auto:/workspace/pepper_auto
       # Frames the pipeline is currently looking at, written by
       # media_manager/grpc_handle.py and served by image_viewer on :8003.
       - ./display_imgs:/workspace/display_imgs

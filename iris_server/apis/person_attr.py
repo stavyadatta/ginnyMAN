@@ -1,4 +1,4 @@
-from utils import ApiObject, PersonDetails, record_assistant_reply
+from utils import ApiObject, Neo4j, PersonDetails, message_format
 from core_api import PersonDetectionCropper, ChatGPT, Grok, RelationshipChecker
 
 from .api_base import ApiBase
@@ -30,7 +30,10 @@ class _PersonAttribute(ApiBase):
                 llm_response += chunk
                 yield ApiObject(chunk)
         
-            record_assistant_reply(person_details, llm_response)
+            person_details.set_latest_llm_message(
+                message_format("assistant", llm_response))
+            person_details.set_attribute("state", "speak")
+            Neo4j.add_message_to_person(person_details)
             RelationshipChecker.adding_text2relationship_checker(person_details)
 
         except Exception as e:

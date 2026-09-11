@@ -89,7 +89,6 @@ RUN pip install --force-reinstall --no-deps onnxruntime-gpu==1.16.3
 # ---------- app code ----------
 COPY iris_server        /workspace/iris_server
 COPY grpc_communication /workspace/grpc_communication
-COPY pepper_auto        /workspace/pepper_auto
 
 # main.py does `from image_viewer import image_serve`, but image_viewer.py sits
 # at the repo root rather than inside iris_server/, so it needs its own COPY.
